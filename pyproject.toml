@@ -1,0 +1,27 @@
+[project]
+name = "bbor-client"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "suzukikensuke1", email = "kensuke_suzuki@ap.eng.osaka-u.ac.jp" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pandas>=2.3.0",
+    "pydantic>=2.11.7",
+    "requests>=2.32.4",
+]
+
+[project.scripts]
+bbor-client = "bbor_client:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "pytest>=8.4.1",
+]
