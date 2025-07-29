@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, StringConstraints, model_validator, field_validator, DirectoryPath, FilePath
 from typing import Annotated, Optional, BinaryIO
 import random
-from .conf import MAX_STUDY_NAME_LENGTH, MIN_STUDY_NAME_LENGTH, DEFAULT_N_TRIALS_TOTAL, MAX_N_TRIALS_TOTAL, MAX_RANDOM_SEED
+from .conf import MAX_STUDY_NAME_LENGTH, MIN_STUDY_NAME_LENGTH, DEFAULT_N_TRIALS_TOTAL, MAX_N_TRIALS_TOTAL, MAX_RANDOM_SEED, MAX_FILE_NAME_LENGTH, PRM_SUFFIXES
 
 
 StudyNameConstraints = StringConstraints(
@@ -79,6 +79,12 @@ class RandomSeedInput(BaseModel):
             print(f'random_seed is generated as {random_seed}')
         return random_seed
 
+def validate_file_name(file_name: str, suffixes: Optional[tuple[str,...]]=None,):
+    if suffixes is not None and not file_name.lower().endswith(suffixes):
+        raise ValueError(f'{file_name=} should be suffixed by {suffixes}')
+    elif len(file_name) > MAX_FILE_NAME_LENGTH:
+        raise ValueError(f'File name should not exceed {MAX_FILE_NAME_LENGTH} characters')
+
 class InputFiles(BaseModel):
     '''
     Validates file inputs.
@@ -86,7 +92,6 @@ class InputFiles(BaseModel):
     1. gpxfile and gpxfile_name.
     2. prmfile, prmfile_name, mfile, mfile_name, ciffiles, ciffile_names
     3. prmfile_name, mfile, mfile_name, ciffile_names
-
     '''
     gpxfile: Optional[BinaryIO] = Field(None, exclude=True)
     gpxfile_name: Optional[str] = Field(None, exclude=True)
@@ -101,20 +106,34 @@ class InputFiles(BaseModel):
     def validate_gpxfile_name(cls, gpxfile_name:str):
         if gpxfile_name is None:
             return None
-        elif gpxfile_name.lower().endswith('.gpx'):
-            return gpxfile_name
-        else:
-            raise ValueError(f'{gpxfile_name=} should be suffixed by ".gpx"')
-    
+        suffixes = ('.gpx',)
+        validate_file_name(gpxfile_name, suffixes)
+        return gpxfile_name
+
     @field_validator('prmfile_name', mode='after')
-    def validate_prmfile_name(cls, prmfile_name:str):
+    def validate_measurementfile_name(cls, prmfile_name:str):
         if prmfile_name is None:
             return None
-        elif prmfile_name.lower().endswith('.gpx'):
-            return prmfile_name
-        else:
-            raise ValueError(f'{prmfile_name=} should be suffixed by ".gpx"')
+        suffixes = PRM_SUFFIXES
+        validate_file_name(prmfile_name, suffixes)
+        return prmfile_name
     
+    @field_validator('mfile_name', mode='after')
+    def validate_prmfile_name(cls, mfile_name:str):
+        if mfile_name is None:
+            return None
+        validate_file_name(mfile_name)
+        return mfile_name
+    
+    @field_validator('ciffile_names', mode='after')
+    def validate_ciffile_names(cls, ciffile_names:list[str]):
+        if prmfile_name is None:
+            return None
+        suffixes = PRM_SUFFIXES
+        validate_file_name(prmfile_name, suffixes)
+        return ciffile_names
+    
+
 
 
 

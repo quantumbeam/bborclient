@@ -1,5 +1,5 @@
-from.client import APIClient
+from .client import BBORClient
 
 __all__ = [
-    APIClient,
+    BBORClient,
 ]
