@@ -245,6 +245,7 @@ class BBORClient:
         if response.status_code==200:
             self.seqlist = json.loads(response.content)
             print('self.seqlist updated')
+            PostStudyServerParams.sequence_list = self.seqlist
             return json.loads(response.content)
         else:
             if return_response:
@@ -257,68 +258,34 @@ class BBORClient:
         return_response: bool = False,
         **kwargs,
     ) -> Optional[Response]:
-        # First validation from client interface and some data processing
-        client_interface_arg_model = PostStudyClientParams.model_validate(**kwargs)
-        # Second validation to create the argument model
-        server_side_arg_model = PostStudyServerParams.model_validate(
-            **client_interface_arg_model.model_dump(),
-            
+        # Validates client parameters and processes some data
+        client_param_model = PostStudyClientParams.model_validate(**kwargs)
+        # Validates further and creates the definitive parameter model
+        server_param_model = PostStudyServerParams.model_validate(
+            **client_param_model.model_dump(),
+            gpx_filecontent = None,
+            measurement_filecontent = None,
         )
-        # Upload files if necessary
-        if client_interface_arg_model.prmfile:
-            self.upload_prm(client_interface_arg_model.prmfile, overwrite=True)
+        # Upload prm, cif, and seq files if necessary
+        if client_param_model.prmfile:
+            self.upload_prm(client_param_model.prmfile, overwrite=True)
+        if client_param_model.ciffiles:
+            self.upload_cif(client_param_model.ciffiles, overwrite=True)
 
-
-        data = server_side_arg_model.model_dump()
-
-        if arg_model.resume_study:
-            files = []
-        elif arg_model.inputdir:
-            files = [
-                ('files', open(file, 'rb'))
-                for file in iglob(os.path.join(arg_model.inputdir, '*')) # type: ignore
-            ]
-        elif arg_model.gpxfile:
-            files = [
-                ('files', open(arg_model.gpxfile, 'rb'))
-            ]
-        elif arg_model.mfile is not None and arg_model.ciffiles is not None and arg_model.prmfile is not None:
-            files = [
-                ('files', open(arg_model.mfile, 'rb')),
-                ('files', open(arg_model.prmfile, 'rb')),
-            ]
-            files.extend([
-                ('files', open(cif, 'rb')) for cif in arg_model.ciffiles
-            ])
-        else:
-            raise Exception
-        if arg_model.mysequencefile is not None:
-            files.append(
-                ('files', open(arg_model.mysequencefile, 'rb'))
-            )
+        # Files to upload with multitype/form-data
+        files = []
+        if server_param_model.gpx_filecontent:
+            files.append(('files', server_param_model.gpx_filecontent))
+        elif server_param_model.measurement_filecontent:
+            files.append(('files', server_param_model.measurement_filecontent))
         
-        # if self.token:
-        #     header = {'Authorization': f'Bearer {self.token}'}
-        # else:
-        #     raise ValueError ('token is empty')
-        
-        # url = api_url(self.server)+'/task/study'
-
         response = self.send_api(
             endpoint = '/task/study',
             method = 'post',
-            data = data,
+            data = server_param_model.model_dump(),
             files = files,
             authorization = True,
         )
-        # response = requests.post(
-        #     url,
-        #     data=data,
-        #     files=files,
-        #     headers=header,
-        #     # allow_redirects=False,
-        #     verify=VERIFY_CERT,
-        # )
 
         if response.status_code == 202:
             # print('Request successful')

@@ -65,28 +65,30 @@ class PRMFileInput(BaseModel):
         if prm_filename_present + prmfile_present > 1:
             raise KeyError('Exclusive parameters specified. Choose either prm_filename or prmfile')
         return self
-   
+
     @model_validator(mode='after')
     def populate_prm_filename(self):
-
-        if self.prm_filename is None and self.prmfile is not None:
+        necessary_to_populate = self.prm_filename is None and self.prmfile is not None
+        if necessary_to_populate:
             filename = self.prmfile.name
             if filename in self.prm_file_list:
-                pass
-            self.prm_filename = self.prmfile.name
+                if self.overwrite_prmfile:
+                    pass
+                else:
+                    raise ValueError(
+                        f'PRM file with the name {filename} is already on the server. 
+                        If you use the uploaded file, just specify prm_filename={filename}, 
+                        or if replace the file, specify overwrite_prmfile=True.'
+                    )
+            self.prm_filename = filename
         return self
     
-    @model_validator(mode='after')
-    def func(self):
-        if self.prm_filename is not None:
-            if self.prm_filename in self.prm_file_list:
-                pass
-        return self
 
 class CIFFileInput(BaseModel):
-
+    cif_filenames: Optional[list[str]] = None
     ciffiles: Optional[Union[FilePath, list[FilePath]]] = Field(None, exclude=True)
     cif_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
+    overwrite_ciffiles: bool = Field(False, exclude=True)
 
     @field_validator('ciffiles', mode='after')
     def ensure_ciffiles_list(cls, ciffiles):
@@ -94,6 +96,30 @@ class CIFFileInput(BaseModel):
             return [ciffiles]
         else:
             return ciffiles
+    
+    @model_validator(mode='after')
+    def exclusive_ciffiles_ciffilenames(self):
+        cif_filenames_present = self.cif_filenames is not None
+        ciffiles_present = self.ciffiles is not None
+        if cif_filenames_present + ciffiles_present > 1:
+            raise KeyError('Exclusive parameters specified. Choose either cif_filenames or ciffiles')
+        return self
+
+    @model_validator(mode='after')
+    def populate_cif_filename(self):
+        necessary_to_populate = self.cif_filenames is None and self.ciffiles is not None
+        if necessary_to_populate:
+            for ciffile in self.ciffiles:
+                if not ciffile.name in self.prm_file_list:
+                    if not self.overwrite_ciffiles:
+                        raise ValueError(
+                            f'PRM file with the name {ciffile.name} is already on the server. 
+                            If you use the uploaded file, just specify prm_filename={ciffile.name}, 
+                            or if replace the file, specify overwrite_prmfile=True.'
+                        )
+            self.cif_filenames = [file.name for file in self.ciffiles]
+        return self
+    
 
 class Inputdir:
     inputdir: Optional[DirectoryPath] = Field(None, exclude=True)
