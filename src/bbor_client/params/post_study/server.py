@@ -1,6 +1,7 @@
 import json
 from pydantic import BaseModel, Field, StringConstraints, model_validator, field_validator, ConfigDict
 from typing import Annotated, Optional, BinaryIO, ClassVar
+from io import BufferedReader
 from ...util import get_file_size_from_binaryio
 from ...conf import MAX_STUDY_NAME_LENGTH, MIN_STUDY_NAME_LENGTH, MAX_N_TRIALS_TOTAL, DEFAULT_N_TRIALS_TOTAL, MAX_RANDOM_SEED, MAX_FILE_NAME_LENGTH, MAX_FILE_SIZE, MAX_MEAS_FILESIZE
 
@@ -48,7 +49,7 @@ class RandomSeed(BaseModel):
     random_seed: Annotated[int, RandomSeedConstraints]
 
 class GPXFile(BaseModel):
-    gpx_filecontent: Optional[BinaryIO] = None
+    gpx_filecontent: Optional[BinaryIO] = Field(None, exclude=True)
     gpx_filename: Optional[Annotated[str, FileNameConstraints]] = None
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -73,7 +74,7 @@ class GPXFile(BaseModel):
         return self
 
 class MeasurementFile(BaseModel):
-    measurement_filecontent: Optional[BinaryIO] = None
+    measurement_filecontent: Optional[BufferedReader] = Field(None, exclude=True)
     measurement_filename: Optional[Annotated[str, FileNameConstraints]] = None
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -154,7 +155,7 @@ class InputFiles(
 
 class Sequence(BaseModel):
     sequence: str
-    sequence_args_json: Optional[str] = Field(None)
+    # sequence_args_json: Optional[str] = Field(None)
     sequence_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
 
     @field_validator('sequence', mode='after')
@@ -163,13 +164,15 @@ class Sequence(BaseModel):
             raise ValueError(f'{sequence} is not a valid sequence. Please choose from the available sequences.')
         return sequence
     
-    @field_validator('sequence_args_json', mode='after')
-    def validate_sequence_args_jsonable(cls, sequence_args_json):
-        try:
-            _ = json.loads(sequence_args_json)
-        except TypeError:
-            raise TypeError('sequence_args_json must be a json string')
-        return sequence_args_json
+    # @field_validator('sequence_args_json', mode='after')
+    # def validate_sequence_args_jsonable(cls, sequence_args_json):
+    #     if sequence_args_json is None:
+    #         return sequence_args_json
+    #     try:
+    #         _ = json.loads(sequence_args_json)
+    #     except TypeError:
+    #         raise TypeError('sequence_args_json must be a json string')
+    #     return sequence_args_json
 
 class BackgroundFile(BaseModel):
     # Not yet implemented

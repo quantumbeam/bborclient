@@ -1,6 +1,6 @@
 import json
 from pydantic import BaseModel, Field, model_validator, field_validator, FilePath, DirectoryPath
-from typing import Annotated, Optional, Union, ClassVar
+from typing import Annotated, Optional, ClassVar
 from pathlib import Path
 import random
 from .server import StudyNameConstraints, TrialNumbers, RandomSeedConstraints, DuplicateStudyControl, Tags, MeasurementConditions
@@ -37,14 +37,10 @@ class RandomSeedInput(BaseModel):
 
     If not specified, a random seed will be generated.
     '''
-    random_seed: Optional[Annotated[int, RandomSeedConstraints]] = None
+    random_seed: Optional[Annotated[int, RandomSeedConstraints]] = Field(
+        default_factory = lambda _: random.randint(0, MAX_RANDOM_SEED-1),
+    )
 
-    @field_validator('random_seed', mode='after')
-    def generate_random_seed(cls, random_seed):
-        if random_seed is None:
-            random_seed = random.randint(0, MAX_RANDOM_SEED-1)
-            print(f'random_seed is generated as {random_seed}')
-        return random_seed
 
 class GPXFileInput(BaseModel):
     gpxfile: Optional[FilePath] = Field(None, exclude=True)
@@ -56,7 +52,7 @@ class PRMFileInput(BaseModel):
     prm_filename: Optional[str] = None
     prmfile: Optional[FilePath] = Field(None, exclude=True)
     prm_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
-    overwrite_prmfile: bool = False
+    overwrite_prmfile: bool = Field(False, exclude=False)
 
     @model_validator(mode='after')
     def exclusive_prmfile_prmfilename(self):
@@ -90,7 +86,14 @@ class CIFFileInput(BaseModel):
     cif_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
     overwrite_ciffiles: bool = Field(False, exclude=True)
 
-    @field_validator('ciffiles', mode='after')
+    @field_validator('cif_filenames', mode='before')
+    def ensure_ciffilenames_list(cls, ciffiles):
+        if isinstance(ciffiles, str):
+            return [ciffiles]
+        else:
+            return ciffiles
+
+    @field_validator('ciffiles', mode='before')
     def ensure_ciffiles_list(cls, ciffiles):
         if isinstance(ciffiles, Path):
             return [ciffiles]
@@ -121,45 +124,47 @@ class CIFFileInput(BaseModel):
         return self
     
 
-class Inputdir:
-    inputdir: Optional[DirectoryPath] = Field(None, exclude=True)
+# class Inputdir:
+#     inputdir: Optional[DirectoryPath] = Field(None, exclude=True)
 
 class InputFilesInput(
     GPXFileInput,
     MeasurementFileInput,
     PRMFileInput,
     CIFFileInput,
-    Inputdir,
+    # Inputdir,
 ):
-    @model_validator(mode='after')
-    def mutually_exclusive_parameters_with_inputdir(self):
-        gpx_present = self.gpxfile is not None
-        mfile_present = self.measurementfile is not None
-        prm_present = self.prmfile is not None
-        cif_present = self.prmfile is not None
-        inputdir_present = self.inputdir is not None
-        if inputdir_present:
-            if any([gpx_present, mfile_present, prm_present, cif_present]):
-                raise KeyError('Exclusive parameters specified. When specifying inputdir, gpxfile, measurementfile, prmfile, and ciffiles are not required.')
-        return self
+    # @model_validator(mode='after')
+    # def mutually_exclusive_parameters_with_inputdir(self):
+    #     gpx_present = self.gpxfile is not None
+    #     mfile_present = self.measurementfile is not None
+    #     prm_present = self.prmfile is not None
+    #     cif_present = self.prmfile is not None
+    #     inputdir_present = self.inputdir is not None
+    #     if inputdir_present:
+    #         if any([gpx_present, mfile_present, prm_present, cif_present]):
+    #             raise KeyError('Exclusive parameters specified. When specifying inputdir, gpxfile, measurementfile, prmfile, and ciffiles are not required.')
+    #     return self
     
-    @model_validator(mode='after')
-    def load_files_from_dir(self):
-        if self.inputdir is None:
-            return self
-        self.ciffiles = []
-        for file in self.inputdir.iterdir():
-            if not file.is_file():
-                continue
-            elif file.suffix.lower()=='.gpx':
-                self.gpxfile = file
-            elif file.suffix.lower() in MFILE_SUFFIXES:
-                self.measurementfile = file
-            elif file.suffix.lower() in PRM_SUFFIXES:
-                self.prmfile = file
-            elif file.suffix.lower() in CIF_SUFFIXES:
-                self.ciffiles.append(file)
-        return self
+    # @model_validator(mode='after')
+    # def load_files_from_dir(self):
+    #     if self.inputdir is None:
+    #         return self
+    #     self.ciffiles = []
+    #     for file in self.inputdir.iterdir():
+    #         if not file.is_file():
+    #             continue
+    #         elif file.suffix.lower()=='.gpx':
+    #             self.gpxfile = file
+    #         elif file.suffix.lower() in MFILE_SUFFIXES:
+    #             self.measurementfile = file
+    #         elif file.suffix.lower() in PRM_SUFFIXES:
+    #             self.prmfile = file
+    #         elif file.suffix.lower() in CIF_SUFFIXES:
+    #             self.ciffiles.append(file)
+    #     return self
+
+
 
 class SequenceInput(BaseModel):
     '''
@@ -171,15 +176,15 @@ class SequenceInput(BaseModel):
     sequence: str = 'latest'
     # sequence: Optional[str] = None
     # sequencefile: Optional[FilePath] = Field(None, exclude=True)
-    sequence_args: Optional[dict] = None
-    sequence_args_json: Optional[str] = None
+    # sequence_args: Optional[dict] = None
+    # sequence_args_json: Optional[str] = None
     # overwrite: bool = Field(False, exclude=True)
 
-    @model_validator(mode='after')
-    def dump_sequence_args(self):
-        if self.sequence_args_json is None and self.sequence_args is not None:
-            self.sequence_args_json = json.dumps(self.sequence_args)
-        return self
+    # @model_validator(mode='after')
+    # def dump_sequence_args(self):
+    #     if self.sequence_args_json is None and self.sequence_args is not None:
+    #         self.sequence_args_json = json.dumps(self.sequence_args)
+    #     return self
 
 
 class PostStudyClientParams(
@@ -188,7 +193,7 @@ class PostStudyClientParams(
     RandomSeedInput,
     InputFilesInput,
     SequenceInput,
-    DuplicateStudyControl,
+    # DuplicateStudyControl,
     Tags,
     MeasurementConditions,
 ):

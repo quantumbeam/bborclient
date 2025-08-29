@@ -10,11 +10,17 @@ requires-python = ">=3.9"
 dependencies = [
     "pandas>=2.3.0",
     "pydantic>=2.11.7",
+    "python-abc>=0.2.0",
     "requests>=2.32.4",
 ]
 
 [project.scripts]
 bbor-client = "bbor_client:main"
+
+[project.optional-dependencies]
+parsexml = [
+    "xmltodict>=0.14.2",
+]
 
 [build-system]
 requires = ["hatchling"]

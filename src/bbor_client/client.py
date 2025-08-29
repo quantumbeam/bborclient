@@ -244,6 +244,7 @@ class BBORClient:
         )
         if response.status_code==200:
             self.seqlist = json.loads(response.content)
+            PostStudyServerParams.sequence_list = self.seqlist
             print('self.seqlist updated')
             PostStudyServerParams.sequence_list = self.seqlist
             return json.loads(response.content)
@@ -258,27 +259,48 @@ class BBORClient:
         return_response: bool = False,
         **kwargs,
     ) -> Optional[Response]:
-        # Validates client parameters and processes some data
-        client_param_model = PostStudyClientParams.model_validate(**kwargs)
-        # Validates further and creates the definitive parameter model
-        server_param_model = PostStudyServerParams.model_validate(
-            **client_param_model.model_dump(),
-            gpx_filecontent = None,
-            measurement_filecontent = None,
-        )
-        # Upload prm, cif, and seq files if necessary
-        if client_param_model.prmfile:
-            self.upload_prm(client_param_model.prmfile, overwrite=True)
-        if client_param_model.ciffiles:
-            self.upload_cif(client_param_model.ciffiles, overwrite=True)
-
-        # Files to upload with multitype/form-data
-        files = []
-        if server_param_model.gpx_filecontent:
-            files.append(('files', server_param_model.gpx_filecontent))
-        elif server_param_model.measurement_filecontent:
-            files.append(('files', server_param_model.measurement_filecontent))
         
+        # First validation from client interface and some data processing
+        client_interface_arg_model = PostStudyClientParams.model_validate(kwargs)
+        c = client_interface_arg_model
+
+        # Parse the measurement file if provided
+        if c.measurementfile:
+            from .parsers import selector
+            Parser = selector(
+                extension = c.measurementfile.suffix,
+            )
+            m_parser = Parser(c.measurementfile)
+        else:
+            m_parser = None
+
+
+        # Second validation to create the argument model
+        # c = client_interface_arg_model
+        server_side_arg_model = PostStudyServerParams(
+            **c.model_dump(),
+            **dict(
+                measurement_filecontent = m_parser._to_csv_bytesio() if m_parser else None,
+                measurement_filename = m_parser.csvname if m_parser else None,
+            ),
+        )
+        # Upload files if necessary
+        if c.prmfile:
+            self.upload_prm(c.prmfile, overwrite=c.overwrite_prmfile)
+        if c.ciffiles:
+            for ciffile in c.ciffiles:
+                self.upload_cif(ciffile, overwrite=c.overwrite_ciffiles)
+
+        # From the argument model to a request parameters
+        s = server_side_arg_model
+        data = s.model_dump()
+        print(f'{data=}')
+        files = []
+        if s.measurement_filecontent:
+            files.append(
+                ('files', (s.measurement_filename, s.measurement_filecontent))
+            )
+
         response = self.send_api(
             endpoint = '/task/study',
             method = 'post',
