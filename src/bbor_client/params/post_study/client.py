@@ -72,8 +72,8 @@ class PRMFileInput(BaseModel):
                     pass
                 else:
                     raise ValueError(
-                        f'PRM file with the name {filename} is already on the server. 
-                        If you use the uploaded file, just specify prm_filename={filename}, 
+                        f'PRM file with the name {filename} is already on the server. \
+                        If you use the uploaded file, just specify prm_filename={filename}, \
                         or if replace the file, specify overwrite_prmfile=True.'
                     )
             self.prm_filename = filename
@@ -82,7 +82,7 @@ class PRMFileInput(BaseModel):
 
 class CIFFileInput(BaseModel):
     cif_filenames: Optional[list[str]] = None
-    ciffiles: Optional[Union[FilePath, list[FilePath]]] = Field(None, exclude=True)
+    ciffiles: Optional[list[FilePath]] = Field(None, exclude=True)
     cif_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
     overwrite_ciffiles: bool = Field(False, exclude=True)
 
@@ -116,8 +116,8 @@ class CIFFileInput(BaseModel):
                 if not ciffile.name in self.prm_file_list:
                     if not self.overwrite_ciffiles:
                         raise ValueError(
-                            f'PRM file with the name {ciffile.name} is already on the server. 
-                            If you use the uploaded file, just specify prm_filename={ciffile.name}, 
+                            f'PRM file with the name {ciffile.name} is already on the server. \
+                            If you use the uploaded file, just specify prm_filename={ciffile.name}, \
                             or if replace the file, specify overwrite_prmfile=True.'
                         )
             self.cif_filenames = [file.name for file in self.ciffiles]
