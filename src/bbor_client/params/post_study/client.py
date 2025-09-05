@@ -34,10 +34,9 @@ class TrialNumberInput(TrialNumbers):...
 class RandomSeedInput(BaseModel):
     '''
     Represents the random seed number used in initial random search by optuna.
-
-    If not specified, a random seed will be generated.
+    If not specified, a random number will be generated.
     '''
-    random_seed: Optional[Annotated[int, RandomSeedConstraints]] = Field(
+    random_seed: Annotated[int, RandomSeedConstraints] = Field(
         default_factory = lambda _: random.randint(0, MAX_RANDOM_SEED-1),
     )
 
@@ -52,7 +51,7 @@ class PRMFileInput(BaseModel):
     prm_filename: Optional[str] = None
     prmfile: Optional[FilePath] = Field(None, exclude=True)
     prm_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
-    overwrite_prmfile: bool = Field(False, exclude=False)
+    overwrite_prmfile: bool = False
 
     @model_validator(mode='after')
     def exclusive_prmfile_prmfilename(self):
@@ -66,7 +65,7 @@ class PRMFileInput(BaseModel):
     def populate_prm_filename(self):
         necessary_to_populate = self.prm_filename is None and self.prmfile is not None
         if necessary_to_populate:
-            filename = self.prmfile.name
+            filename = self.prmfile.name # type: ignore
             if filename in self.prm_file_list:
                 if self.overwrite_prmfile:
                     pass
@@ -134,6 +133,7 @@ class InputFilesInput(
     CIFFileInput,
     # Inputdir,
 ):
+    pass
     # @model_validator(mode='after')
     # def mutually_exclusive_parameters_with_inputdir(self):
     #     gpx_present = self.gpxfile is not None

@@ -304,7 +304,7 @@ class BBORClient:
         response = self.send_api(
             endpoint = '/task/study',
             method = 'post',
-            data = server_param_model.model_dump(),
+            data = data,
             files = files,
             authorization = True,
         )
