@@ -7,7 +7,7 @@ from requests.models import Response
 from .params.post_study.client import PostStudyClientParams
 from .params.post_study.server import PostStudyServerParams
 from .models.user import UserResponse as User
-from .conf import API_URL_MDX, API_URL_DOCKER, API_URL_LOCAL, VERIFY_CERT
+from .conf import VERIFY_CERT
 from .util import api_url, require_token
 
 
@@ -16,10 +16,12 @@ class BBORClient:
             self,
             username: Optional[str] = None,
             password: Optional[str] = None,
-            server: Literal['mdx', 'local', 'docker'] = 'mdx',
+            server: Literal['mdx', 'local', 'docker', 'dev'] = 'mdx',
+            _dp = None,
     ):
         # Initialization
         self.server = server
+        self._dp = _dp
         self.history: list = []
         self.prmlist = []
         self.ciflist = []
@@ -48,7 +50,7 @@ class BBORClient:
     ) -> Response:
         if not endpoint.startswith('/'):
             endpoint = '/' + endpoint
-        url = api_url(self.server) + endpoint
+        url = api_url(self.server, self._dp) + endpoint
         if authorization:
             if self.token is None:
                 raise ValueError('Token is empty')
@@ -159,7 +161,7 @@ class BBORClient:
         if response.status_code==200:
             self.prmlist = json.loads(response.content)
             PostStudyServerParams.prm_file_list = self.prmlist
-            PostStudyClientParams.prm_file_list = self.prmlist
+            # PostStudyClientParams.prm_file_list = self.prmlist
             print('self.prmlist updated')
             return self.prmlist
         else:
@@ -202,7 +204,7 @@ class BBORClient:
         if response.status_code==200:
             self.ciflist = json.loads(response.content)
             PostStudyServerParams.cif_file_list = self.ciflist
-            PostStudyClientParams.cif_file_list = self.ciflist
+            # PostStudyClientParams.cif_file_list = self.ciflist
             print('self.ciflist updated')
             return self.ciflist
         else:
@@ -244,7 +246,6 @@ class BBORClient:
         )
         if response.status_code==200:
             self.seqlist = json.loads(response.content)
-            PostStudyServerParams.sequence_list = self.seqlist
             print('self.seqlist updated')
             PostStudyServerParams.sequence_list = self.seqlist
             return json.loads(response.content)
@@ -274,6 +275,12 @@ class BBORClient:
         else:
             m_parser = None
 
+        # Upload files if necessary
+        if c.prmfile:
+            self.upload_prm(c.prmfile, overwrite=c.overwrite_prmfile)
+        if c.ciffiles:
+            for ciffile in c.ciffiles:
+                self.upload_cif(ciffile, overwrite=c.overwrite_ciffiles)
 
         # Second validation to create the argument model
         # c = client_interface_arg_model
@@ -284,17 +291,11 @@ class BBORClient:
                 measurement_filename = m_parser.csvname if m_parser else None,
             ),
         )
-        # Upload files if necessary
-        if c.prmfile:
-            self.upload_prm(c.prmfile, overwrite=c.overwrite_prmfile)
-        if c.ciffiles:
-            for ciffile in c.ciffiles:
-                self.upload_cif(ciffile, overwrite=c.overwrite_ciffiles)
 
         # From the argument model to a request parameters
         s = server_side_arg_model
         data = s.model_dump()
-        print(f'{data=}')
+        # print(f'{data=}')
         files = []
         if s.measurement_filecontent:
             files.append(
