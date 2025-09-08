@@ -50,8 +50,8 @@ class MeasurementFileInput(BaseModel):
 class PRMFileInput(BaseModel):
     prm_filename: Optional[str] = None
     prmfile: Optional[FilePath] = Field(None, exclude=True)
-    prm_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
-    overwrite_prmfile: bool = False
+    # prm_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
+    overwrite_prmfile: bool = Field(False, exclude=True)
 
     @model_validator(mode='after')
     def exclusive_prmfile_prmfilename(self):
@@ -66,15 +66,15 @@ class PRMFileInput(BaseModel):
         necessary_to_populate = self.prm_filename is None and self.prmfile is not None
         if necessary_to_populate:
             filename = self.prmfile.name # type: ignore
-            if filename in self.prm_file_list:
-                if self.overwrite_prmfile:
-                    pass
-                else:
-                    raise ValueError(
-                        f'PRM file with the name {filename} is already on the server. \
-                        If you use the uploaded file, just specify prm_filename={filename}, \
-                        or if replace the file, specify overwrite_prmfile=True.'
-                    )
+            # if filename in self.prm_file_list:
+            #     if self.overwrite_prmfile:
+            #         pass
+            #     else:
+            #         raise ValueError(
+            #             f'PRM file with the name {filename} is already on the server. \
+            #             If you use the uploaded file, just specify prm_filename={filename}, \
+            #             or if replace the file, specify overwrite_prmfile=True.'
+            #         )
             self.prm_filename = filename
         return self
     
@@ -82,7 +82,7 @@ class PRMFileInput(BaseModel):
 class CIFFileInput(BaseModel):
     cif_filenames: Optional[list[str]] = None
     ciffiles: Optional[list[FilePath]] = Field(None, exclude=True)
-    cif_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
+    # cif_file_list: ClassVar[list[str]] = [] # Dynamically populated at runtime
     overwrite_ciffiles: bool = Field(False, exclude=True)
 
     @field_validator('cif_filenames', mode='before')
@@ -111,17 +111,15 @@ class CIFFileInput(BaseModel):
     def populate_cif_filename(self):
         necessary_to_populate = self.cif_filenames is None and self.ciffiles is not None
         if necessary_to_populate:
-            for ciffile in self.ciffiles:
-                if not ciffile.name in self.prm_file_list:
-                    if not self.overwrite_ciffiles:
-                        raise ValueError(
-                            f'PRM file with the name {ciffile.name} is already on the server. \
-                            If you use the uploaded file, just specify prm_filename={ciffile.name}, \
-                            or if replace the file, specify overwrite_prmfile=True.'
-                        )
+            # for ciffile in self.ciffiles:
+            #     if not ciffile.name in self.cif_file_list:
+            #         if not self.overwrite_ciffiles:
+            #             raise ValueError(
+            #                 f'CIF file with the name {ciffile.name} is already on the server. If you use the uploaded file, just specify prm_filename={ciffile.name}, or if replace the file, specify overwrite_prmfile=True.'
+            #             )
             self.cif_filenames = [file.name for file in self.ciffiles]
         return self
-    
+
 
 # class Inputdir:
 #     inputdir: Optional[DirectoryPath] = Field(None, exclude=True)
