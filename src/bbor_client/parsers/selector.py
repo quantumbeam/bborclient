@@ -3,10 +3,10 @@ from typing import Type
 from .interface import ParserInterface
 
 def selector(
-        extension: str
+        filename: str,
 ) -> Type[ParserInterface]:
-
-    module = importlib.import_module(f'bbor_client.parsers.{extension.lower().lstrip(".")}')
+    extension = filename.lower().split('.')[-1]
+    module = importlib.import_module(f'bbor_client.parsers.{extension}')
     return module.Parser
 
 

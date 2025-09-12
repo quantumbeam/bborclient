@@ -9,6 +9,7 @@ from .params.post_study.server import PostStudyServerParams
 from .models.user import UserResponse as User
 from .conf import VERIFY_CERT
 from .util import api_url, require_token
+from .parsers import selector
 
 
 class BBORClient:
@@ -255,47 +256,41 @@ class BBORClient:
 
 
     @require_token
-    def post_bborietveld_study_task(
+    def _post_study_task(
         self,
-        return_response: bool = False,
         **kwargs,
-    ) -> Optional[Response]:
-        
-        # First validation from client interface and some data processing
-        client_interface_arg_model = PostStudyClientParams.model_validate(kwargs)
-        c = client_interface_arg_model
-
+    ) -> Response:
+        ''' Used internally from client and from the web app'''
         # Parse the measurement file if provided
-        if c.measurementfile:
-            from .parsers import selector
-            Parser = selector(
-                extension = c.measurementfile.suffix,
+        if kwargs.get('gpxfile'):
+            m_parser = None
+        elif kwargs.get('measurementfile'):
+            parser = selector(
+                filename = kwargs['measurementfile'].name,
             )
-            m_parser = Parser(c.measurementfile)
+            m_parser = parser(filepath=kwargs['measurementfile'])
+        elif kwargs.get('measurement_filename') and kwargs.get('measurement_filecontent'):
+            parser = selector(
+                filename = kwargs['measurement_filename'],
+            )
+            m_parser = parser(
+                filename=kwargs['measurement_filename'],
+                filecontent = kwargs['measurement_filecontent'],
+            )
         else:
             m_parser = None
 
-        # Upload files if necessary
-        if c.prmfile:
-            self.upload_prm(c.prmfile, overwrite=c.overwrite_prmfile)
-        if c.ciffiles:
-            for ciffile in c.ciffiles:
-                self.upload_cif(ciffile, overwrite=c.overwrite_ciffiles)
-
-        # Second validation to create the argument model
-        # c = client_interface_arg_model
-        server_side_arg_model = PostStudyServerParams(
-            **c.model_dump(),
-            **dict(
+        # Validate the arguments with Server Parameter model
+        server_side_arg_model = PostStudyServerParams.model_validate(
+            kwargs | dict( #Overwrite the following keys in kwargs
                 measurement_filecontent = m_parser._to_csv_bytesio() if m_parser else None,
                 measurement_filename = m_parser.csvname if m_parser else None,
-            ),
+            )
         )
 
-        # From the argument model to a request parameters
+        # From Server Parameter model to request parameters
         s = server_side_arg_model
         data = s.model_dump()
-        # print(f'{data=}')
         files = []
         if s.measurement_filecontent:
             files.append(
@@ -308,6 +303,33 @@ class BBORClient:
             data = data,
             files = files,
             authorization = True,
+        )
+        return response
+
+
+    @require_token
+    def post_bborietveld_study_task(
+        self,
+        return_response: bool = False,
+        **kwargs,
+    ) -> Optional[Response]:
+        '''Used from client'''
+        # Validate with Client Parameter model and do some preprocessing
+        client_interface_arg_model = PostStudyClientParams.model_validate(kwargs)
+        c = client_interface_arg_model
+
+        # Upload files if necessary
+        if c.prmfile:
+            self.upload_prm(c.prmfile, overwrite=c.overwrite_prmfile)
+        if c.ciffiles:
+            for ciffile in c.ciffiles:
+                self.upload_cif(ciffile, overwrite=c.overwrite_ciffiles)
+
+        # Post the study task
+        response = self._post_study_task(
+            **c.model_dump(),
+            measurement_filecontent = c.measurementfile.read_bytes() if c.measurementfile else None,
+            measurement_filename = c.measurementfile.name if c.measurementfile else None,
         )
 
         if response.status_code == 202:

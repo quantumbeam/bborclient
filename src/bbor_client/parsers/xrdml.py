@@ -13,13 +13,9 @@ class Parser(ParserInterface):
         return removed
 
 
-    def _parse(self, filepath: str) -> ParsedData:
-        with open(filepath, 'r') as f:
-            # All data as dictionary
-            self._data = xmltodict.parse(f.read())
-            # Header strings
-            f.seek(0)
-            header = self._remove_counts(f.read())
+    def _parse(self, content: str) -> ParsedData:
+        self._data = xmltodict.parse(content)
+        header = self._remove_counts(content)
 
         scan_data = self._data['xrdMeasurements']['xrdMeasurement']['scan']
         data_points =  scan_data['dataPoints']

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, Optional
 from pathlib import Path
 import io
 from dataclasses import dataclass
@@ -13,29 +13,40 @@ class ParsedData:
 
 
 class ParserInterface(ABC):
-    def __init__(self, filepath: Union[str,Path]):
+    def __init__(
+            self,
+            filepath: Optional[Union[str,Path]] = None,
+            filename: Optional[str] = None,
+            filecontent: Optional[bytes] = None,
+    ):
         # Populate path-related variables
-        if isinstance(filepath, str):
+        if filepath:
             filepath = Path(filepath)
-        self._path = filepath.as_posix()
-        self._name = filepath.name
-        self._csvname = filepath.with_suffix('.csv').name
-        self._ext = filepath.suffix
+            filename = filepath.name
+            filecontent = filepath.read_bytes()
+        
+        assert filename is not None, 'Either filepath or filename must be provided.'
+        assert filecontent is not None, 'Either filepath or filecontent must be provided.'
+
+        # self._path = filepath.as_posix() #NOTE: Parser should not have file location info
+        self._name = filename
+        self._ext = filename.rsplit('.',1)[-1].lower()
+        self._csvname = filename.rsplit('.',1)[0] + '.csv'
 
         # Parse the file and populate variables of measurement data
-        data = self._parse(filepath.as_posix())
+        data = self._parse(filecontent.decode('utf-8'))
         self._header = data.header
         self._twotheta = data.twotheta
         self._counts = data.counts
 
 
     @abstractmethod
-    def _parse(self, filepath:str) -> ParsedData:...
+    def _parse(self, content:str) -> ParsedData:...
 
 
-    @property
-    def path(self) -> str:
-        return self._path
+    # @property
+    # def path(self) -> str:
+    #     return self._path
     @property
     def name(self) -> str:
         return self._name
