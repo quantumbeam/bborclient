@@ -91,6 +91,14 @@ class BBORClient:
             if return_response:
                 return response
 
+    @require_token
+    def update_client_params(self):
+        ''' Synchronize client parameters with the server.'''
+        _ = self.get_me()
+        _ = self.get_prm_list()
+        _ = self.get_cif_list()
+        _ = self.get_sequence_list()
+
     def get_token(
         self,
         username: str,
@@ -112,10 +120,7 @@ class BBORClient:
         if response.status_code == 200:
             self.token = response.json()['access_token']
             print('Token received successfully')
-            _ = self.get_me()
-            _ = self.get_prm_list()
-            _ = self.get_cif_list()
-            _ = self.get_sequence_list()
+            self.update_client_params()
         else:
             self.token = None
             print('Failed in getting a token')
