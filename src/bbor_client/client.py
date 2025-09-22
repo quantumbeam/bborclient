@@ -92,12 +92,22 @@ class BBORClient:
                 return response
 
     @require_token
-    def update_client_params(self):
+    def update_client_params(
+        self,
+        update_me: bool = True,
+        update_prmlist: bool = True,
+        update_ciflist: bool = True,
+        update_seqlist: bool = True,
+    ):
         ''' Synchronize client parameters with the server.'''
-        _ = self.get_me()
-        _ = self.get_prm_list()
-        _ = self.get_cif_list()
-        _ = self.get_sequence_list()
+        if update_me:
+            _ = self.get_me()
+        if update_prmlist:
+            _ = self.get_prm_list()
+        if update_ciflist:
+            _ = self.get_cif_list()
+        if update_seqlist:
+            _ = self.get_sequence_list()
 
     def get_token(
         self,
@@ -167,7 +177,6 @@ class BBORClient:
         if response.status_code==200:
             self.prmlist = json.loads(response.content)
             PostStudyServerParams.prm_file_list = self.prmlist
-            # PostStudyClientParams.prm_file_list = self.prmlist
             print('self.prmlist updated')
             return self.prmlist
         else:
@@ -177,25 +186,56 @@ class BBORClient:
     @require_token
     def upload_prm(
         self,
-        prmfile: FilePath,
+        file: FilePath,
         overwrite: bool = False,
         return_response: bool = False,
     ):
-        if isinstance(prmfile, str):
-            prmfile = Path(prmfile)
-        assert prmfile.is_file()
-        response = self.send_api(
-            endpoint = 'file/prm',
-            method = 'post',
-            files = [('files', prmfile.open(mode='r'))],
-            params = dict(overwrite=overwrite),
-            authorization = True,
-        )
+        file = Path(file)
+        assert file.is_file()
+        with file.open(mode='r+b') as f:
+            response = self.send_api(
+                endpoint = 'file/prm',
+                method = 'post',
+                files = [('files', f)],
+                params = dict(overwrite=overwrite),
+                authorization = True,
+            )
         if response.status_code==200:
             print(json.loads(response.content))
             _ = self.get_prm_list(return_response=False)
         if return_response:
             return response
+
+    @require_token
+    def delete_prm(
+        self,
+        filenames: Union[list[str], str],
+        ignore_absent_files: bool = True,
+        return_response: bool = False,
+    ):
+        if isinstance(filenames, str):
+            filenames = [filenames]
+        for file in filenames:
+            if file not in self.prmlist:
+                if ignore_absent_files:
+                    print(f'{file} not found in the server. Skipped.')
+                    continue
+                else:
+                    raise ValueError(f'{file} not found in the server')
+        response = self.send_api(
+            endpoint = 'file/prm',
+            method = 'delete',
+            params = dict(filenames=filenames),
+            authorization = True,
+        )
+        if response.status_code==200:
+            print(json.loads(response.content))
+        else:
+            print('Request failed')
+        _ = self.get_prm_list()
+        if return_response:
+            return response
+
 
     @require_token
     def get_cif_list(
@@ -210,7 +250,6 @@ class BBORClient:
         if response.status_code==200:
             self.ciflist = json.loads(response.content)
             PostStudyServerParams.cif_file_list = self.ciflist
-            # PostStudyClientParams.cif_file_list = self.ciflist
             print('self.ciflist updated')
             return self.ciflist
         else:
@@ -220,25 +259,56 @@ class BBORClient:
     @require_token
     def upload_cif(
         self,
-        ciffile: FilePath,
+        file: FilePath,
         overwrite: bool = False,
         return_response: bool = False,
     ):
-        if isinstance(ciffile, str):
-            ciffile = Path(ciffile)
-        assert ciffile.is_file()
-        response = self.send_api(
-            endpoint = 'file/cif',
-            method = 'post',
-            files = [('files', ciffile.open(mode='r'))],
-            params = dict(overwrite=overwrite),
-            authorization = True,
-        )
+        file = Path(file)
+        assert file.is_file()
+        with file.open(mode='r+b') as f:
+            response = self.send_api(
+                endpoint = 'file/cif',
+                method = 'post',
+                files = [('files', f)],
+                params = dict(overwrite=overwrite),
+                authorization = True,
+            )
         if response.status_code==200:
             print(json.loads(response.content))
             _ = self.get_cif_list(return_response=False)
         if return_response:
             return response
+
+    @require_token
+    def delete_cif(
+        self,
+        filenames: Union[list[str], str],
+        ignore_absent_files: bool = True,
+        return_response: bool = False,
+    ):
+        if isinstance(filenames, str):
+            filenames = [filenames]
+        for file in filenames:
+            if file not in self.prmlist:
+                if ignore_absent_files:
+                    print(f'{file} not found in the server. Skipped.')
+                    continue
+                else:
+                    raise ValueError(f'{file} not found in the server')
+        response = self.send_api(
+            endpoint = 'file/cif',
+            method = 'delete',
+            params = dict(filenames=filenames),
+            authorization = True,
+        )
+        if response.status_code==200:
+            print(json.loads(response.content))
+        else:
+            print('Request failed')
+        _ = self.get_cif_list()
+        if return_response:
+            return response
+
 
     @require_token
     def get_sequence_list(
@@ -258,6 +328,60 @@ class BBORClient:
         else:
             if return_response:
                 return response
+
+    @require_token
+    def upload_seq(
+        self,
+        file: FilePath,
+        overwrite: bool = False,
+        return_response: bool = False,
+    ):
+        file = Path(file)
+        assert file.is_file()
+        with file.open(mode='r+b') as f:
+            response = self.send_api(
+                endpoint = 'file/seq',
+                method = 'post',
+                files = [('files', f)],
+                params = dict(overwrite=overwrite),
+                authorization = True,
+            )
+        if response.status_code==200:
+            print(json.loads(response.content))
+            _ = self.get_cif_list(return_response=False)
+        if return_response:
+            return response
+
+    @require_token
+    def delete_seq(
+        self,
+        filenames: Union[list[str], str],
+        ignore_absent_files: bool = True,
+        return_response: bool = False,
+    ):
+        if isinstance(filenames, str):
+            filenames = [filenames]
+        for file in filenames:
+            if file not in self.prmlist:
+                if ignore_absent_files:
+                    print(f'{file} not found in the server. Skipped.')
+                    continue
+                else:
+                    raise ValueError(f'{file} not found in the server')
+        response = self.send_api(
+            endpoint = 'file/seq',
+            method = 'delete',
+            params = dict(filenames=filenames),
+            authorization = True,
+        )
+        if response.status_code==200:
+            print(json.loads(response.content))
+        else:
+            print('Request failed')
+        _ = self.get_sequence_list()
+        if return_response:
+            return response
+
 
 
     @require_token
