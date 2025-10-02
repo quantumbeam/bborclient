@@ -157,7 +157,8 @@ class BBORClient:
             params = data,
         )
         if response.status_code == 200:
-            print(f'User created successfully')
+            print(f'User created successfully. Please make sure to store the password securely.')
+            self.get_token(username, password)
         else:
             print('Request failed')
             print(f'{response.status_code}: {response.content.decode()}\n')
@@ -177,7 +178,7 @@ class BBORClient:
         if response.status_code==200:
             self.prmlist = json.loads(response.content)
             PostStudyServerParams.prm_file_list = self.prmlist
-            print('self.prmlist updated')
+            print('prmlist updated')
             return self.prmlist
         else:
             if return_response:
@@ -250,7 +251,7 @@ class BBORClient:
         if response.status_code==200:
             self.ciflist = json.loads(response.content)
             PostStudyServerParams.cif_file_list = self.ciflist
-            print('self.ciflist updated')
+            print('ciflist updated')
             return self.ciflist
         else:
             if return_response:
@@ -322,7 +323,7 @@ class BBORClient:
         )
         if response.status_code==200:
             self.seqlist = json.loads(response.content)
-            print('self.seqlist updated')
+            print('seqlist updated')
             PostStudyServerParams.sequence_list = self.seqlist
             return json.loads(response.content)
         else:
@@ -383,7 +384,6 @@ class BBORClient:
             return response
 
 
-
     @require_token
     def _post_study_task(
         self,
@@ -435,7 +435,6 @@ class BBORClient:
         )
         return response
 
-
     @require_token
     def post_bborietveld_study_task(
         self,
@@ -472,4 +471,54 @@ class BBORClient:
         if return_response:
             return response
 
+
+    @require_token
+    def ask_task_queue_status(
+        self,
+        study_id: Optional[str] = None,
+        return_response: bool = False,
+    ) -> Union[dict, None, Response]:
+        if study_id is not None:
+            param = {'study_id': study_id}
+        else:
+            param = None
+        response = self.send_api(
+            endpoint = '/task/status',
+            method = 'get',
+            params = param,
+            authorization = True,
+        )
+        if response.status_code==200:
+            return response.json()
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+            return None
+
+    # @require_token
+    # def get_study(
+    #     self,
+    #     study_id:str,
+    #     return_dict: bool = False,
+    #     return_response: bool = False,
+    # ) -> Study|dict|None|requests.models.Response:
+    #     response =  self.send_api(
+    #         endpoint = '/study',
+    #         method = 'get',
+    #         params = {'study_id': str(study_id)},
+    #         authorization = True,
+    #     )
+    #     match response.status_code:
+    #         case 200:
+    #             if return_dict:
+    #                 return response.json()
+    #             else:
+    #                 return Study.model_validate(response.json())
+    #         case _:
+    #             print('Request failed')
+    #             print(f'{response.status_code}: {response.content.decode()}')
+    #     if return_response:
+    #         return response
 
