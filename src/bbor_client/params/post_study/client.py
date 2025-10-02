@@ -1,10 +1,10 @@
-import json
+import math
 from pydantic import BaseModel, Field, model_validator, field_validator, FilePath, DirectoryPath
 from typing import Annotated, Optional, ClassVar
 from pathlib import Path
 import random
 from .server import StudyNameConstraints, TrialNumbers, RandomSeedConstraints, DuplicateStudyControl, Tags, MeasurementConditions
-from ...conf import MAX_RANDOM_SEED, MFILE_SUFFIXES, PRM_SUFFIXES, CIF_SUFFIXES
+from ...conf import MAX_RANDOM_SEED, DEFAULT_N_TRIALS_TOTAL
 
 class StudyNameInput(BaseModel):
     '''
@@ -29,7 +29,16 @@ class StudyNameInput(BaseModel):
             raise KeyError('Required parameter is missing. Specify either study_name or study_name_base.')
         return self
 
-class TrialNumberInput(TrialNumbers):...
+class TrialNumberInput(BaseModel):
+    n_trials_total: int = DEFAULT_N_TRIALS_TOTAL
+    n_startup_trials: Optional[int] = None
+
+    @model_validator(mode='after')
+    def generate_n_startup_trials(self):
+        if self.n_startup_trials is None:
+            self.n_startup_trials = math.ceil(self.n_trials_total/3)
+        return self
+
 
 class RandomSeedInput(BaseModel):
     '''
