@@ -1,8 +1,9 @@
 [project]
 name = "bbor-client"
 version = "0.1.0"
-description = "Add your description here"
+description = "A python client library for the BBO-Rietveld API server"
 readme = "README.md"
+# license = {file = "LICENSE"}
 authors = [
     { name = "suzukikensuke1", email = "kensuke_suzuki@ap.eng.osaka-u.ac.jp" }
 ]
@@ -14,9 +15,6 @@ dependencies = [
     "requests>=2.32.4",
 ]
 
-[project.scripts]
-bbor-client = "bbor_client:main"
-
 [project.optional-dependencies]
 parsexml = [
     "xmltodict>=0.14.2",
@@ -25,6 +23,20 @@ parsexml = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = [
+    "src/**",
+    "README.md",
+    "LICENSE",
+]
+exclude = [
+  "tests/**",
+  "uv.lock",
+  ".python-version",
+  "*.pyc",
+  "__pycache__/**"
+]
 
 [dependency-groups]
 dev = [
