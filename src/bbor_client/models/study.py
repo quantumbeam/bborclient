@@ -2,6 +2,7 @@ from pydantic import Field
 from datetime import datetime, timedelta
 from typing import Literal, Annotated, Optional, Union, Any
 from .base import ClientModel, Link
+from .constants import DIFFRACTION_BEAM_TYPES, DIFFRACTION_SAMPLE_TYPES, DIFFRACTION_METHODS, DIFFRACTION_GEOMETRIES, CRYSTAL_SYSTEMS, STUDY_STATUS
 
 class TrialNum(ClientModel):
     num: int
@@ -27,7 +28,7 @@ class Instrument(ClientModel):
     tags: list[str] = []
 
 class BeamSpec(ClientModel):
-    type: Literal[*DIFFRACTION_BEAM_TYPES] # type: ignore
+    type: Literal[*DIFFRACTION_BEAM_TYPES]
     structure: Literal['continuous', 'pulse']
     # source: Literal[*XRAY_SOURCES]|None = None # type: ignore
     #NOTE: Target element is not included in a gpx object
@@ -89,7 +90,7 @@ class ResumableAttributes(ClientModel):
     gsas2_version: Union[str, list[str]]
 
 
-class StudyResponse(ClientModel):
+class Study(ClientModel):
     id: str = Field(validation_alias='_id')
     status: Literal[*STUDY_STATUS] # type: ignore
     trials: list[TrialNum]

@@ -7,6 +7,7 @@ from requests.models import Response
 from .params.post_study.client import PostStudyClientParams
 from .params.post_study.server import PostStudyServerParams
 from .models.user import UserResponse as User
+# from .models.study import Study
 from .conf import VERIFY_CERT
 from .util import api_url, require_token
 from .parsers import selector
@@ -503,22 +504,21 @@ class BBORClient:
     #     study_id:str,
     #     return_dict: bool = False,
     #     return_response: bool = False,
-    # ) -> Study|dict|None|requests.models.Response:
+    # ) -> Union[Study, dict, None, requests.models.Response]:
     #     response =  self.send_api(
     #         endpoint = '/study',
     #         method = 'get',
     #         params = {'study_id': str(study_id)},
     #         authorization = True,
     #     )
-    #     match response.status_code:
-    #         case 200:
-    #             if return_dict:
-    #                 return response.json()
-    #             else:
-    #                 return Study.model_validate(response.json())
-    #         case _:
-    #             print('Request failed')
-    #             print(f'{response.status_code}: {response.content.decode()}')
-    #     if return_response:
-    #         return response
+    #     if response.status_code==200:
+    #         if return_dict:
+    #             return response.json()
+    #         else:
+    #             return Study.model_validate(response.json())
+    #     else:
+    #         print('Request failed')
+    #         print(f'{response.status_code}: {response.content.decode()}')
+    #         if return_response:
+    #             return response
 
