@@ -75,7 +75,7 @@ class BBORClient:
         self,
         return_dict: bool = False,
         return_response: bool = False,
-        ) -> Union[User, Response, dict, None]:
+    ) -> Union[User, Response, dict, None]:
         response = self.send_api(
             endpoint = '/user/me',
             method = 'get',
@@ -89,6 +89,7 @@ class BBORClient:
                 return User.model_validate(response.json())
         else:
             print('Request failed', response.content)
+            self.me = None
             if return_response:
                 return response
 
@@ -119,14 +120,13 @@ class BBORClient:
         '''
         Get a token from the server. Also, get me, prmlist, ciflist.
         '''
-        credentials = {
-            'username':username,
-            'password':password,
-            }
         response = self.send_api(
             endpoint = '/token',
             method = 'post',
-            data = credentials,
+            data = {
+                'username':username,
+                'password':password,
+            },
         )
         if response.status_code == 200:
             self.token = response.json()['access_token']
