@@ -1,9 +1,9 @@
 [project]
 name = "bbor_client"
-version = "0.1.0"
+version = "1.0.0"
 description = "A python client library for the BBO-Rietveld API server"
 readme = "README.md"
-# license = {file = "LICENSE"}
+license = {file = "LICENSE"}
 authors = [
     { name = "suzukikensuke1", email = "kensuke_suzuki@ap.eng.osaka-u.ac.jp" }
 ]
@@ -20,6 +20,13 @@ parsexml = [
     "xmltodict>=0.14.2",
 ]
 
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "pytest>=8.4.1",
+]
+
+# Building
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -39,8 +46,17 @@ exclude = [
   "__pycache__/**"
 ]
 
-[dependency-groups]
-dev = [
-    "ipykernel>=6.29.5",
-    "pytest>=8.4.1",
-]
+# Semantic release
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+
+[tool.semantic_release.commit_parser_options]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+other_allowed_tags = ["build", "chore", "ci", "docs", "style", "refactor", "test"]
+allowed_tags = ["feat", "fix", "perf", "build", "chore", "ci", "docs", "style", "refactor", "test"]
+default_bump_level = 0
+parse_squash_commits = true
+ignore_merge_commits = true
+
+
