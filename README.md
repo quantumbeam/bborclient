@@ -55,9 +55,9 @@ client = BBORClient('your_username', 'your_password')
 # Start a BBO-Rietveld study
 client.post_bborietveld_study_task(
     study_name_base = 'study_name',
-    measurementfile = 'xrd_data.csv',
-    ciffiles = 'NaCl.cif',
-    prmfile = 'PXC-BB.instprm',
+    measurementfile = '/path/xrd_data.csv',
+    ciffiles = '/path/NaCl.cif',
+    prmfile = '/path/XC-BB.instprm',
 )
 
 # Check progress of a Study
