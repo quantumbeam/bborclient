@@ -1,0 +1,26 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Setup | Checkout Repository on Release Branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for full commit history
+      - name: Setup | Force release branch to be at workflow sha
+        run:
+          git reset --hard ${{ github.sha }}
+      - name: Run Semantic Release
+        uses: python-semantic-release/python-semantic-release@v10.4.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
