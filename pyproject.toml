@@ -22,8 +22,12 @@ parsexml = [
 
 [dependency-groups]
 dev = [
+    "bandit>=1.8.6",
     "ipykernel>=6.29.5",
+    "pip-audit>=2.9.0",
     "pytest>=8.4.1",
+    "python-semantic-release>=10.5.2",
+    "ruff>=0.14.5",
 ]
 
 # Building
