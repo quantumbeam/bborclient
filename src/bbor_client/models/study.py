@@ -2,7 +2,9 @@ from pydantic import Field
 from datetime import datetime, timedelta
 from typing import Literal, Annotated, Optional, Union, Any
 from .base import ClientModel, Link
-from .constants import DIFFRACTION_BEAM_TYPES, DIFFRACTION_SAMPLE_TYPES, DIFFRACTION_METHODS, DIFFRACTION_GEOMETRIES, CRYSTAL_SYSTEMS, STUDY_STATUS
+# from .constants import DIFFRACTION_BEAM_TYPES, DIFFRACTION_SAMPLE_TYPES, DIFFRACTION_METHODS, DIFFRACTION_GEOMETRIES, CRYSTAL_SYSTEMS, STUDY_STATUS
+
+
 
 class TrialNum(ClientModel):
     num: int
@@ -28,8 +30,8 @@ class Instrument(ClientModel):
     tags: list[str] = []
 
 class BeamSpec(ClientModel):
-    type: Literal[*DIFFRACTION_BEAM_TYPES]
-    structure: Literal['continuous', 'pulse']
+    type: Literal['x-ray', 'neutron']# .constants.DIFFRACTION_BEAM_TYPES
+    structure: Literal['continuous', 'pulse']# .constants.DIFFRACTION_BEAM_STRUCTURES
     # source: Literal[*XRAY_SOURCES]|None = None # type: ignore
     #NOTE: Target element is not included in a gpx object
     wave_lengths: Union[list[float], float, None]
@@ -39,9 +41,9 @@ class DiffractionBase(ClientModel):
     measurement_file: str
     instrument: Instrument
     type: str = Field(pattern=r'[PS][XN][CT]-(BB|DS)') #e.g. 'PXC-BB'
-    sample_form: Literal[*DIFFRACTION_SAMPLE_TYPES] # type: ignore
-    method: Literal[*DIFFRACTION_METHODS] # type: ignore
-    geometry: Literal[*DIFFRACTION_GEOMETRIES] # type: ignore
+    sample_form: Literal['powder', 'single']
+    method: Literal['CW', 'TOF']
+    geometry: Literal['Bragg-Brentano', 'Debye-Scherrer']
     beam: BeamSpec
     bank: int
     azimuth: Optional[float] = None
@@ -70,7 +72,7 @@ Diffraction = Annotated[Union[MonochromaticBeam,TimeOfFlight], Field(discriminat
 class Phase(ClientModel):
     name: str
     space_group: str
-    crystal_system: Literal[*CRYSTAL_SYSTEMS] # type: ignore
+    crystal_system: Literal['cubic', 'tetragonal', 'orthorhombic', 'monoclinic', 'triclinic', 'hexagonal', 'trigonal']
     formula: Optional[str] = None
 
 class Sample(ClientModel):
@@ -92,7 +94,7 @@ class ResumableAttributes(ClientModel):
 
 class Study(ClientModel):
     id: str = Field(validation_alias='_id')
-    status: Literal[*STUDY_STATUS] # type: ignore
+    status: Literal['CREATED', 'QUEUING', 'COMPLETED', 'ARCHIVED']
     trials: list[TrialNum]
     name: str = Field(alias='study_name')
     user: Link

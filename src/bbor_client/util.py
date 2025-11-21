@@ -1,3 +1,4 @@
+import re
 from typing import BinaryIO
 from .conf import API_URL_DOCKER, API_URL_LOCAL, API_URL_MDX
 
@@ -41,3 +42,8 @@ def require_token(func):
         else:
             raise ValueError('Token is empty')
     return wrapper
+
+
+def validate_id(id: str):
+    if not re.fullmatch(r'[a-fA-F0-9]{24}', id):
+        raise ValueError(f'Invalid Id format: "{id}"')

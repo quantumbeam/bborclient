@@ -4,12 +4,15 @@ from typing import Optional, Literal, Union
 from pathlib import Path
 import requests
 from requests.models import Response
+import pandas as pd
+from io import StringIO
 from .params.post_study.client import PostStudyClientParams
 from .params.post_study.server import PostStudyServerParams
 from .models.user import UserResponse as User
-# from .models.study import Study
+from .models.study import Study
+from .models.trial import Trial, Refine
 from .conf import VERIFY_CERT
-from .util import api_url, require_token
+from .util import api_url, require_token, validate_id
 from .parsers import selector
 
 
@@ -39,7 +42,7 @@ class BBORClient:
         else:
             self.token = None
 
-    def send_api(
+    def _send_api(
             self,
             endpoint: str = '/',
             method: Literal['get','post','delete','put'] = 'get',
@@ -70,13 +73,14 @@ class BBORClient:
             response = requests.put(url, data=data, params=params, files=files, headers=header, verify=VERIFY_CERT)
         return response
 
+    ### Update instance parameters ###
     @require_token
-    def get_me(
+    def _get_me(
         self,
         return_dict: bool = False,
         return_response: bool = False,
     ) -> Union[User, Response, dict, None]:
-        response = self.send_api(
+        response = self._send_api(
             endpoint = '/user/me',
             method = 'get',
             authorization = True,
@@ -103,7 +107,7 @@ class BBORClient:
     ):
         ''' Synchronize client parameters with the server.'''
         if update_me:
-            _ = self.get_me()
+            _ = self._get_me()
         if update_prmlist:
             _ = self.get_prm_list()
         if update_ciflist:
@@ -111,6 +115,7 @@ class BBORClient:
         if update_seqlist:
             _ = self.get_sequence_list()
 
+    ### Accont managements ###
     def get_token(
         self,
         username: str,
@@ -120,7 +125,7 @@ class BBORClient:
         '''
         Get a token from the server. Also, get me, prmlist, ciflist.
         '''
-        response = self.send_api(
+        response = self._send_api(
             endpoint = '/token',
             method = 'post',
             data = {
@@ -152,7 +157,7 @@ class BBORClient:
             pwd2 = password,
             group = str(group_id),
         )
-        response = self.send_api(
+        response = self._send_api(
             endpoint = '/user',
             method = 'post',
             params = data,
@@ -166,12 +171,13 @@ class BBORClient:
         if return_response:
             return response
 
+    ### Instrprm files ###
     @require_token
     def get_prm_list(
         self,
         return_response: bool = False,
     ) -> Union[list[str], Response, None]:
-        response = self.send_api(
+        response = self._send_api(
             endpoint = 'file/prm',
             method = 'get',
             authorization = True,
@@ -195,7 +201,7 @@ class BBORClient:
         file = Path(file)
         assert file.is_file()
         with file.open(mode='r+b') as f:
-            response = self.send_api(
+            response = self._send_api(
                 endpoint = 'file/prm',
                 method = 'post',
                 files = [('files', f)],
@@ -224,7 +230,7 @@ class BBORClient:
                     continue
                 else:
                     raise ValueError(f'{file} not found in the server')
-        response = self.send_api(
+        response = self._send_api(
             endpoint = 'file/prm',
             method = 'delete',
             params = dict(filenames=filenames),
@@ -238,13 +244,13 @@ class BBORClient:
         if return_response:
             return response
 
-
+    ### CIF files ###
     @require_token
     def get_cif_list(
         self,
         return_response: bool = False,
     ) -> Union[list[str], Response, None]:
-        response = self.send_api(
+        response = self._send_api(
             endpoint = 'file/cif',
             method = 'get',
             authorization = True,
@@ -268,7 +274,7 @@ class BBORClient:
         file = Path(file)
         assert file.is_file()
         with file.open(mode='r+b') as f:
-            response = self.send_api(
+            response = self._send_api(
                 endpoint = 'file/cif',
                 method = 'post',
                 files = [('files', f)],
@@ -297,7 +303,7 @@ class BBORClient:
                     continue
                 else:
                     raise ValueError(f'{file} not found in the server')
-        response = self.send_api(
+        response = self._send_api(
             endpoint = 'file/cif',
             method = 'delete',
             params = dict(filenames=filenames),
@@ -312,12 +318,13 @@ class BBORClient:
             return response
 
 
+    ### Sequence files ###
     @require_token
     def get_sequence_list(
         self,
         return_response: bool = False,
     ):
-        response = self.send_api(
+        response = self._send_api(
             endpoint = 'file/seq',
             method = 'get',
             authorization = True,
@@ -341,7 +348,7 @@ class BBORClient:
         file = Path(file)
         assert file.is_file()
         with file.open(mode='r+b') as f:
-            response = self.send_api(
+            response = self._send_api(
                 endpoint = 'file/seq',
                 method = 'post',
                 files = [('files', f)],
@@ -370,7 +377,7 @@ class BBORClient:
                     continue
                 else:
                     raise ValueError(f'{file} not found in the server')
-        response = self.send_api(
+        response = self._send_api(
             endpoint = 'file/seq',
             method = 'delete',
             params = dict(filenames=filenames),
@@ -385,6 +392,7 @@ class BBORClient:
             return response
 
 
+    ### BBO-Rietveld ###
     @require_token
     def _post_study_task(
         self,
@@ -427,7 +435,7 @@ class BBORClient:
                 ('files', (s.measurement_filename, s.measurement_filecontent))
             )
 
-        response = self.send_api(
+        response = self._send_api(
             endpoint = '/task/study',
             method = 'post',
             data = data,
@@ -473,6 +481,7 @@ class BBORClient:
             return response
 
 
+    ### Tasks ###
     @require_token
     def ask_task_queue_status(
         self,
@@ -483,7 +492,7 @@ class BBORClient:
             param = {'study_id': study_id}
         else:
             param = None
-        response = self.send_api(
+        response = self._send_api(
             endpoint = '/task/status',
             method = 'get',
             params = param,
@@ -498,27 +507,239 @@ class BBORClient:
                 return response
             return None
 
-    # @require_token
-    # def get_study(
-    #     self,
-    #     study_id:str,
-    #     return_dict: bool = False,
-    #     return_response: bool = False,
-    # ) -> Union[Study, dict, None, requests.models.Response]:
-    #     response =  self.send_api(
-    #         endpoint = '/study',
-    #         method = 'get',
-    #         params = {'study_id': str(study_id)},
-    #         authorization = True,
-    #     )
-    #     if response.status_code==200:
-    #         if return_dict:
-    #             return response.json()
-    #         else:
-    #             return Study.model_validate(response.json())
-    #     else:
-    #         print('Request failed')
-    #         print(f'{response.status_code}: {response.content.decode()}')
-    #         if return_response:
-    #             return response
+
+    ### Get study results ###
+    @require_token
+    def get_study(
+        self,
+        id:str,
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[Study, dict, None, Response]:
+        validate_id(id)
+        response =  self._send_api(
+            endpoint = '/study',
+            method = 'get',
+            params = {'study_id': str(id)},
+            authorization = True,
+        )
+        if response.status_code==200:
+            if return_dict:
+                return response.json()
+            else:
+                return Study.model_validate(response.json())
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+
+    @require_token
+    def find_studies(
+        self,
+        query: dict = {},
+        scope: Literal['account', 'group'] = 'group',
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[list[Study], list[dict], None, Response]:
+        if scope=='account':
+            query |= {'user.$id': self.me.id} # type: ignore
+        response = self._send_api(
+            endpoint = '/studies',
+            method = 'post',
+            json = query,
+            authorization = True,
+        )
+        if response.status_code==200:
+            if return_dict:
+                return response.json()
+            else:
+                return [Study.model_validate(study) for study in response.json()]
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+
+    @require_token
+    def find_my_studies(
+        self,
+        query: dict = {},
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[list[Study], list[dict], None, Response]:
+        return self.find_studies(
+            query=query,
+            scope = 'account',
+            return_dict = return_dict,
+            return_response = return_response,
+        )
+    
+    @require_token
+    def get_optuna_study(
+            self,
+            study_name: str,
+            return_json: bool = False,
+            return_response: bool = False,
+    ) -> Union[pd.DataFrame, str, None, Response]:
+        response = self._send_api(
+            endpoint = f'/study/{study_name}/optunadf',
+            method = 'get',
+            authorization = True,
+        )
+        if response.status_code==200:
+            json_received = response.content.decode()
+            json_return = json_received.replace('\\"', '"')[1:-1]
+            if return_json:
+                return json_return
+            else:
+                return pd.read_json(StringIO(json_return))
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+
+
+
+    ### Get trials ###
+    @require_token
+    def get_trial(
+        self,
+        id:str,
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[Trial, dict, None, Response]:
+        validate_id(id)
+        response =  self._send_api(
+            endpoint = '/trial',
+            method = 'get',
+            params = {'trial_id': str(id)},
+            authorization = True,
+        )
+        if response.status_code==200:
+            if return_dict:
+                return response.json()
+            else:
+                return Trial.model_validate(response.json())
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+
+    @require_token
+    def find_trials(
+        self,
+        query: dict = {},
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[list[Trial], list[dict], None, Response]:
+        response = self._send_api(
+            endpoint = '/trials',
+            method = 'post',
+            json = query,
+            authorization = True,
+        )
+        if response.status_code==200:
+            if return_dict:
+                return response.json()
+            else:
+                return [Trial.model_validate(trial) for trial in response.json()]
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+
+    @require_token
+    def get_study_trials(
+        self,
+        study_id: str,
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[list[Trial], list[dict], None, Response]:
+        validate_id(study_id)
+        query = {
+            'parent_study.$id': str(study_id),
+        }
+        return self.find_trials(
+            query = query,
+            return_dict = return_dict,
+            return_response = return_response
+        )
+
+    @require_token
+    def get_best_trials(
+        self,
+        study_id: str,
+        return_dict: bool = False,
+        # return_response: bool = False,
+    ) -> Union[list[Trial], list[dict], None]:
+        validate_id(study_id)
+        study = self.get_study(study_id)
+        if study is None:
+            # print(f'Study "{study_id}" not found')
+            return None
+        assert isinstance(study, Study)
+        best_trial_ids = [best.trial.id for best in study.best_trials]
+        trials = []
+        for id in best_trial_ids:
+            trial = self.get_trial(id, return_dict=return_dict)
+            if trial is None:
+                print(f'Trial {id} not found')
+            trials.append(trial)
+        return trials
+
+
+    ### Get refines ###
+    @require_token
+    def get_refine(
+        self,
+        id:str,
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[Refine, dict, None, Response]:
+        validate_id(id)
+        response =  self._send_api(
+            endpoint = '/refine',
+            method = 'get',
+            params = {'refine_id': str(id)},
+            authorization = True,
+        )
+        if response.status_code==200:
+            if return_dict:
+                return response.json()
+            else:
+                return Refine.model_validate(response.json())
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+
+    @require_token
+    def find_refines(
+        self,
+        query: dict = {},
+        return_dict: bool = False,
+        return_response: bool = False,
+    ) -> Union[list[Refine], list[dict], None, Response]:
+        response = self._send_api(
+            endpoint = '/refines',
+            method = 'post',
+            json = query,
+            authorization = True,
+        )
+        if response.status_code==200:
+            if return_dict:
+                return response.json()
+            else:
+                return [Refine.model_validate(refine) for refine in response.json()]
+        else:
+            print('Request failed')
+            print(f'{response.status_code}: {response.content.decode()}')
+            if return_response:
+                return response
+
 
