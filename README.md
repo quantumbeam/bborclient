@@ -7,8 +7,8 @@ A Python client library for the **[BBO-Reitveld](https://app.bborietveld.quantum
 ## ✨ Features
 
 - Submit analysis tasks to the server for automated Reitveld refinements
+- Download analysis results
 - Create new user accounts
-- Results and resources are shared among and closed to Group members
 
 
 ---
@@ -18,9 +18,9 @@ A Python client library for the **[BBO-Reitveld](https://app.bborietveld.quantum
 - Python 3.9 or higher
 - Dependencies (automatically installed):
   - `requests`
-  - `pandas`
   - `pydantic`
   - `python-abc`
+  - `pandas` (optional, for getting Optuna data)
   - `parsexml` (optional, for parsing XML type measurement file)
 
 ---
@@ -60,43 +60,80 @@ client.post_bborietveld_study_task(
     prmfile = '/path/XC-BB.instprm',
 )
 
-# Check progress of a Study
+# Check progress of Study tasks
 client.ask_task_queue_status(study_id)
 ```
 
-<!-- #### Get results of analyses
+#### Get results of analyses
 
 ```Python
 from bbor_client import BBORClient
 client = BBORClient('your_username', 'your_password')
 
-# Get a result of a Study
+# Get a Study
 client.get_study(study_id)
 
-# Get a list of Study IDs of your group
-client.find_study()
+# Get a list of all Studies of your group
+client.find_studies()
 
-# Get a list of Study IDs you performed
-client.find_study()
+# Get all Studies you performed
+client.find_my_studies()
 
-``` -->
+# Get Studies where study_name matches a specified pattern
+pattern = '^hoge' # Use regular expression
+query = {'study_name': {'$regex': pattern}}
+client.find_studies(query)
 
+# Get Studies of a specified structure model
+query = {
+  'samples': {
+    '$elemMatch': {
+      'phases': {
+        '$elemMatch': {'name': 'Y2O3'}
+      }
+    }
+  }
+}
+client.find_studies(query)
 
-<!-- ## 🧪 API Reference
+# Get Studies which started earlier than 3 days ago and later than 7 days ago
+from datetime import datetime, timedelta, timezone
+tz = timezone(timedelta(hours=9))
+now = datetime.now(tz=tz).astimezone(timezone.utc)
+threedaysago = now - timedelta(days=3)
+sevendaysago = now - timedelta(days=7)
+query = {
+    'start_at': {
+      '$lt': threedaysago.isoformat(),
+      '$gt': sevendaysago.isoformat(),
+    }
+}
+client.find_studies(query)
 
-| Method | Description |
-|--------|-------------|
-| `register(username, password)` | Create a new user account |
-| `login(username, password)` | Authenticate and store token |
-| `submit_analysis(file_path)` | Submit an XRD file for analysis |
-| `check_progress(job_id)` | Check the status of a submitted job |
-| `download_results(job_id, output_dir)` | Download results to a local directory |
---- -->
+# Get a Trial
+client.get_study(trial_id)
+
+# Get all Trials of your group
+client.find_trials()
+
+# Get all Trials of a Study
+client.get_study_trials(study_id)
+
+# Get best Trials of a Study
+client.get_best_trials(study_id)
+
+# Get a Refine
+client.get_refine(refine_id)
+
+# Get all Refines of your group
+client.find_refines()
+```
+
 
 
 ## 🌈 Planned Features
-- Download analysis results
-
+- Implement the native methods of MongoDB such as find_one, aggregation pipeline, sort, projection.
+- Limit (unintended) large-scale data requests
 
 
 
