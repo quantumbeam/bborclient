@@ -600,6 +600,26 @@ class BBORClient:
             if return_response:
                 return response
 
+    @require_token
+    def delete_study(
+        self,
+        study_name: str,
+        return_response: bool = False,
+    ):
+        data = {'study_name': study_name}
+        response = self._send_api(
+            endpoint = '/study',
+            method = 'delete',
+            params = data,
+            authorization = True,
+        )
+        if response.status_code ==200:
+            print(f'{study_name} deleted successfully')
+        else:
+            print('Request failed')
+            if return_response:
+                return response
+
 
 
     ### Get trials ###
