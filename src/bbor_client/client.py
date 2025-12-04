@@ -338,58 +338,58 @@ class BBORClient:
             if return_response:
                 return response
 
-    @require_token
-    def upload_seq(
-        self,
-        file: FilePath,
-        overwrite: bool = False,
-        return_response: bool = False,
-    ):
-        file = Path(file)
-        assert file.is_file()
-        with file.open(mode='r+b') as f:
-            response = self._send_api(
-                endpoint = 'file/seq',
-                method = 'post',
-                files = [('files', f)],
-                params = dict(overwrite=overwrite),
-                authorization = True,
-            )
-        if response.status_code==200:
-            print(json.loads(response.content))
-            _ = self.get_cif_list(return_response=False)
-        if return_response:
-            return response
+    # @require_token
+    # def upload_seq(
+    #     self,
+    #     file: FilePath,
+    #     overwrite: bool = False,
+    #     return_response: bool = False,
+    # ):
+    #     file = Path(file)
+    #     assert file.is_file()
+    #     with file.open(mode='r+b') as f:
+    #         response = self._send_api(
+    #             endpoint = 'file/seq',
+    #             method = 'post',
+    #             files = [('files', f)],
+    #             params = dict(overwrite=overwrite),
+    #             authorization = True,
+    #         )
+    #     if response.status_code==200:
+    #         print(json.loads(response.content))
+    #         _ = self.get_cif_list(return_response=False)
+    #     if return_response:
+    #         return response
 
-    @require_token
-    def delete_seq(
-        self,
-        filenames: Union[list[str], str],
-        ignore_absent_files: bool = True,
-        return_response: bool = False,
-    ):
-        if isinstance(filenames, str):
-            filenames = [filenames]
-        for file in filenames:
-            if file not in self.prmlist:
-                if ignore_absent_files:
-                    print(f'{file} not found in the server. Skipped.')
-                    continue
-                else:
-                    raise ValueError(f'{file} not found in the server')
-        response = self._send_api(
-            endpoint = 'file/seq',
-            method = 'delete',
-            params = dict(filenames=filenames),
-            authorization = True,
-        )
-        if response.status_code==200:
-            print(json.loads(response.content))
-        else:
-            print('Request failed')
-        _ = self.get_sequence_list()
-        if return_response:
-            return response
+    # @require_token
+    # def delete_seq(
+    #     self,
+    #     filenames: Union[list[str], str],
+    #     ignore_absent_files: bool = True,
+    #     return_response: bool = False,
+    # ):
+    #     if isinstance(filenames, str):
+    #         filenames = [filenames]
+    #     for file in filenames:
+    #         if file not in self.prmlist:
+    #             if ignore_absent_files:
+    #                 print(f'{file} not found in the server. Skipped.')
+    #                 continue
+    #             else:
+    #                 raise ValueError(f'{file} not found in the server')
+    #     response = self._send_api(
+    #         endpoint = 'file/seq',
+    #         method = 'delete',
+    #         params = dict(filenames=filenames),
+    #         authorization = True,
+    #     )
+    #     if response.status_code==200:
+    #         print(json.loads(response.content))
+    #     else:
+    #         print('Request failed')
+    #     _ = self.get_sequence_list()
+    #     if return_response:
+    #         return response
 
 
     ### BBO-Rietveld ###
