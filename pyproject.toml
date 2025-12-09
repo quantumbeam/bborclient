@@ -7,7 +7,7 @@ license = {file = "LICENSE"}
 authors = [
     { name = "suzukikensuke1", email = "kensuke_suzuki@ap.eng.osaka-u.ac.jp" }
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.11.7",
     "python-abc>=0.2.0",
