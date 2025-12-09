@@ -9,6 +9,7 @@ authors = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "pandas>=2.3.3",
     "pydantic>=2.11.7",
     "python-abc>=0.2.0",
     "requests>=2.32.4",
@@ -18,8 +19,12 @@ dependencies = [
 parsexml = [
     "xmltodict>=0.14.2",
 ]
-optuna-dataframe = [
-    "pandas>=2.3.3",
+GSAS-II = [
+    "gitpython>=3.1.45",
+    "numpy<2.0 ; python_version <= '3.11'",
+    "numpy>=2.0 ; python_version > '3.11'",
+    "pycifrw>=5.0.1",
+    "scipy>=1.16.3",
 ]
 
 [dependency-groups]
