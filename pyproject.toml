@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     "pandas>=2.3.3",
     "pydantic>=2.11.7",
+    "pymongo>=4.15.5",
     "python-abc>=0.2.0",
     "requests>=2.32.4",
 ]
