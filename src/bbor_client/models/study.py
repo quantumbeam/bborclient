@@ -1,4 +1,5 @@
-from pydantic import Field
+from pydantic import Field, ConfigDict
+from bson import DBRef, ObjectId
 from datetime import datetime, timedelta
 from typing import Literal, Annotated, Optional, Union, Any
 from .base import ClientModel, Link
@@ -8,15 +9,23 @@ from .base import ClientModel, Link
 
 class TrialNum(ClientModel):
     num: int
-    trial: Link
+    trial: Link|DBRef
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 class BestTrial(ClientModel):
     approach: Literal['lowestRwp']
     trial_num: int
-    trial: Link
+    trial: Link|DBRef
     Rwp: float
     GOF: float
     staled: bool = False
+    
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 class Instrument(ClientModel):
     name: Optional[str] = None
@@ -93,25 +102,29 @@ class ResumableAttributes(ClientModel):
 
 
 class Study(ClientModel):
-    id: str = Field(validation_alias='_id')
+    id: str|ObjectId = Field(validation_alias='_id')
+    study_name: str
+    user: Link|DBRef
+    group: Link|DBRef
     status: Literal['CREATED', 'QUEUING', 'COMPLETED', 'ARCHIVED']
     trials: list[TrialNum]
-    name: str = Field(alias='study_name')
-    user: Link
-    group: Link
     resumables: list[ResumableAttributes]
     start_at: datetime #NOTE: Duplicated for searching the collection
     updated_at: datetime
     n_trials_total: int
     n_startup_trials: int
     random_seed: Union[int, Literal['random'], None]
-    random_seed_fix: int
+    # random_seed_fix: int
     sequence_version: Optional[str] = None
-    sequence_version_fix: str
+    # sequence_version_fix: str
     sequence_kwargs: Optional[dict] = None
     num_sequence_steps: int = -1
     measurements: list[Diffraction]
     samples: list[Sample]
     path_in_obs: str
-    best_trials: list[BestTrial] = Field(alias='best_trials')
+    best_trials: list[BestTrial]
     tags: list[str] = []
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
