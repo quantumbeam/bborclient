@@ -1,5 +1,8 @@
-from pydantic import BaseModel, ConfigDict
 from os import linesep as br
+from typing import TYPE_CHECKING, Any, Annotated
+from typing_extensions import TypeAlias
+from pydantic import BaseModel, ConfigDict, PlainSerializer
+
 
 
 indent_unit = ' '*2
@@ -60,8 +63,41 @@ class ClientModel(BaseModel):
 
 
 
-class Link(ClientModel):
+
+
+# Define ObjectId and DBRef depending on the availability of bunnet
+
+
+class DBRef_(ClientModel):
     collection: str
     id: str
 
+if TYPE_CHECKING:
+    from bunnet import PydanticObjectId
+    from bson import DBRef
+    ObjectId: TypeAlias = 'PydanticObjectId | str'
+    Link: TypeAlias = 'DBRef | DBRef_'
+else:
+    try:
+        from bunnet import PydanticObjectId
+        from bson import DBRef
+        HAS_BUNNET = True
 
+        def serialize_dbref(obj: DBRef|dict|list) -> str|Any:
+            if isinstance(obj, DBRef):
+                return {"collection": obj.collection, "id": str(obj.id)}
+            elif isinstance(obj, dict):
+                return {k: serialize_dbref(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple, set)):
+                t = type(obj)
+                return t(serialize_dbref(v) for v in obj)
+            else:
+                return str(obj)
+    except ImportError:
+        HAS_BUNNET = False
+
+    ObjectId = PydanticObjectId if HAS_BUNNET else str
+    Link = Annotated[DBRef, PlainSerializer(serialize_dbref)] if HAS_BUNNET else DBRef_
+
+
+    

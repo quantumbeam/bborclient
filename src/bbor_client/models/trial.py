@@ -1,11 +1,11 @@
-from pydantic import BaseModel, Field, model_validator, conlist
+from pydantic import BaseModel, Field, model_validator, conlist, ConfigDict
 from datetime import datetime, timedelta
 from typing import Literal, Annotated, Optional, Union
 # from bborclient.util import ClientModel, Link
 # from bborclient.models.base import ClientModel, Link
-from .base import ClientModel, Link
+from .base import ClientModel, Link, ObjectId
 # from bborconstants import GSASII_BG_FUNCTIONS
-
+# from bson import DBRef, ObjectId
 
 class ConstantInt(ClientModel):
     value: int
@@ -675,16 +675,19 @@ class RefineBasemodel(ClientModel):
 
 
 class Refine(RefineBasemodel):
-    id: str = Field(validation_alias='_id')
+    id: ObjectId = Field(validation_alias='_id')
     # parent_trial: Link['Trial']
     parent_trial: Link
     group: Link
     start_at: datetime
     time_to_complete: timedelta
 
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 class Trial(ClientModel):
-    id: str = Field(validation_alias='_id')
+    id: ObjectId = Field(validation_alias='_id')
     parent_study: Link
     group: Link
     refines: list[Link]
@@ -695,3 +698,7 @@ class Trial(ClientModel):
     start_at: datetime
     time_to_complete: timedelta
     processed_by: str
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )

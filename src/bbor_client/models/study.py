@@ -1,15 +1,15 @@
 from pydantic import Field, ConfigDict
-from bson import DBRef, ObjectId
+# from bson import DBRef
 from datetime import datetime, timedelta
 from typing import Literal, Annotated, Optional, Union, Any
-from .base import ClientModel, Link
+from .base import ClientModel, ObjectId, Link
 # from .constants import DIFFRACTION_BEAM_TYPES, DIFFRACTION_SAMPLE_TYPES, DIFFRACTION_METHODS, DIFFRACTION_GEOMETRIES, CRYSTAL_SYSTEMS, STUDY_STATUS
 
 
 
 class TrialNum(ClientModel):
     num: int
-    trial: Link|DBRef
+    trial: Link
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -18,7 +18,7 @@ class TrialNum(ClientModel):
 class BestTrial(ClientModel):
     approach: Literal['lowestRwp']
     trial_num: int
-    trial: Link|DBRef
+    trial: Link
     Rwp: float
     GOF: float
     staled: bool = False
@@ -102,10 +102,10 @@ class ResumableAttributes(ClientModel):
 
 
 class Study(ClientModel):
-    id: str|ObjectId = Field(validation_alias='_id')
+    id: ObjectId = Field(validation_alias='_id')
     study_name: str
-    user: Link|DBRef
-    group: Link|DBRef
+    user: Link
+    group: Link
     status: Literal['CREATED', 'QUEUING', 'COMPLETED', 'ARCHIVED']
     trials: list[TrialNum]
     resumables: list[ResumableAttributes]
@@ -121,7 +121,7 @@ class Study(ClientModel):
     num_sequence_steps: int = -1
     measurements: list[Diffraction]
     samples: list[Sample]
-    path_in_obs: str
+    # path_in_obs: str
     best_trials: list[BestTrial]
     tags: list[str] = []
 
