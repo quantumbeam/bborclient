@@ -507,6 +507,27 @@ class BBORClient:
                 return response
             return None
 
+    @require_token
+    def post_finishing_task(
+        self,
+        study_id: str,
+        return_response: bool = False,
+    ) -> Response|None:
+        validate_id(study_id)
+        response = self._send_api(
+            endpoint = 'task/finish',
+            method = 'post',
+            params = {'study_id': study_id},
+            authorization = True,
+        )
+        if response.status_code==202:
+            print(response.json())
+        else:
+            print('Request failed')
+            print('f{response.status_code}: {response.content.decode()}')
+        if return_response:
+            return response
+        
 
     ### Get study results ###
     @require_token
