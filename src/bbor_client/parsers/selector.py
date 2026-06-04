@@ -6,6 +6,8 @@ def selector(
         filename: str,
 ) -> Type[ParserInterface]:
     extension = filename.lower().split('.')[-1]
+    if extension in {'dat',}:
+        extension = 'csv'
     module = importlib.import_module(f'bbor_client.parsers.{extension}')
     return module.Parser
 
