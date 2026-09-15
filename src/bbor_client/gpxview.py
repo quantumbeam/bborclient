@@ -1,11 +1,12 @@
 import re
 from typing import Literal
+import numpy as np
 import pandas as pd
 from pathlib import Path
 
 import plotly.graph_objects as go
 import plotly.colors as pcolors
-import myPlotlyStyle
+from . import myPlotlyStyle
 
 from GSASII.GSASIIscriptable import G2Project, G2PwdrData, G2Phase, G2AtomRecord, SetPrintLevel
 from GSASII.GSASIIElem import GetElInfo
@@ -13,6 +14,7 @@ from GSASII.GSASIIlattice import CellAbsorption
 from GSASII.GSASIIspc import MustrainNames
 
 from .conf import MFILE_SUFFIXES, CIF_SUFFIXES, PRM_SUFFIXES
+from .models import trial as models
 
 def load_gpx(
     inputdir: Path|str|None = None,
@@ -282,6 +284,44 @@ def print_parameters(
 
 
 
+
+
+def calc_weight_fractions(
+    phase: G2Phase,
+    gpx: G2Project
+) -> models.ErrorPropergatedFloat:
+    scales = np.array([p.getHAPvalues(gpx.histogram(0))['Scale'][0] for p in gpx.phases() if p is not None])
+    volumes = np.array([p.get_cell_and_esd()[0]['volume'] for p in gpx.phases() if p is not None])
+    masses = np.array([p['General']['Mass'] for p in gpx.phases() if p is not None])
+    pId = phase['pId']
+    massfrac = scales[pId]*volumes[pId]*masses[pId]/((scales*volumes*masses).sum())
+    return models.ErrorPropergatedFloat(
+        value = float(massfrac),
+        sig = 0.0,
+    )
+
+
+def calc_mol_fractions(phase: G2Phase, gpx: G2Project) -> models.ErrorPropergatedFloat:
+    scales = np.array([p.getHAPvalues(gpx.histogram(0))['Scale'][0] for p in gpx.phases() if p is not None])
+    volumes = np.array([p.get_cell_and_esd()[0]['volume'] for p in gpx.phases() if p is not None])
+    pId = phase['pId']
+    molfrac = scales[pId]*volumes[pId]/((scales*volumes).sum())
+    return models.ErrorPropergatedFloat(
+        value = float(molfrac),
+        sig = 0.0,
+    )
+
+
+def get_phase_fractions(
+        phase: G2Phase,
+        gpx: G2Project,
+        phase_scale: models.RefinableFloat,
+) -> models.Fractions:
+    return models.Fractions(
+        phase_scale = phase_scale,
+        wgt_frac = calc_weight_fractions(phase, gpx),
+        mol_frac = calc_mol_fractions(phase, gpx),
+    )
 
 
 def linear_absorption_coefficients(gpx: G2Project) -> dict[str, float]:
