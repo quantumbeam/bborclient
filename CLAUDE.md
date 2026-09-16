@@ -16,8 +16,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Known gaps — check before relying on these
 
-- `gpxview.py` imports the `GSASII` package itself (`GSASIIscriptable`, `GSASIIElem`, ...) and `myPlotlyStyle`, **neither of which is declared in `pyproject.toml`** — the `GSAS-II` optional-dependency group only pulls GSAS-II's *supporting* libraries (`gitpython`, `numpy`, `pycifrw`, `scipy`), not GSAS-II itself. `pip install bbor_client[GSAS-II]` alone will not make `bbor_client.gpxview` importable; a user needs GSAS-II's own scriptable installation and the (currently undocumented/private) `myPlotlyStyle` package set up separately.
-- `src/bbor_client/params.py` is **100% commented-out dead code**, superseded by the `params/post_study/` package (`client.py` + `server.py`). Confirmed via `git status`/`git ls-files`: it's tracked, so it's not local cruft, just stale — don't extend it; do parameter-validation work in `params/post_study/` instead.
 - No `tests/` directory exists anywhere in the repo, even though both CI workflows below invoke `pytest tests/unit tests/integrate tests/e2e` — that mismatch is presumably *why* they're disabled, not an accident.
 
 ## CI / release
