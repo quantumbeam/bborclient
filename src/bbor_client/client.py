@@ -160,7 +160,7 @@ class BBORClient:
         response = self._send_api(
             endpoint = '/user',
             method = 'post',
-            params = data,
+            json = data,
         )
         if response.status_code == 200:
             print(f'User created successfully. Please make sure to store the password securely.')
