@@ -3,7 +3,7 @@ import pandas as pd
 from .interface import ParserInterface, ParsedData
 
 # Text pattern for the main count data part
-SEP = r'[,\s]'
+SEP = r'[,\s\t]'
 NUMERIC = r'[\+\-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][\+\-]?\d+)?'
 DPATTERN = re.compile(rf'^{SEP}*{NUMERIC}(?:({SEP}+){NUMERIC})+{SEP}*$')
 # Can match '123     -.456\t+7e-8,     .9'
@@ -32,7 +32,7 @@ class Parser(ParserInterface):
         if ',' in sep_string:
             sep = ','
         elif '\t' in sep_string:
-            sep = r'\t',
+            sep = r'\t'
         elif sep_string.isspace():
             sep = r'\s+'
         else:
@@ -55,6 +55,7 @@ class Parser(ParserInterface):
             else:
                 raise ValueError('Cannot parse the file')
         raise ValueError('Maybe measurement file too short?')
+
 
     def _parse(self, content: str) -> ParsedData:
         header, skiprows, sep_string = self._detect_header_separator(content)

@@ -15,7 +15,7 @@ A Python client library for the **[BBO-Reitveld](https://app.bborietveld.quantum
 
 ## 📦 Requirements
 
-- Python 3.9 or higher
+- Python 3.11 or higher
 - Dependencies (automatically installed):
   - `requests`
   - `pydantic`
@@ -30,7 +30,7 @@ A Python client library for the **[BBO-Reitveld](https://app.bborietveld.quantum
 Install directly from the GitHub repository:
 
 ```bash
-pip install git+https://git@github.com:quantumbeam/bborclient.git
+pip install git+https://github.com/quantumbeam/bborclient.git
 ```
 
 ---
@@ -150,4 +150,4 @@ TBD
 
 ## 🚘️ License
 
-TBD
+MIT License. See [LICENSE](LICENSE) for details.

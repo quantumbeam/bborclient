@@ -3,13 +3,15 @@ name = "bbor_client"
 version = "1.0.0"
 description = "A python client library for the BBO-Rietveld API server"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "suzukikensuke1", email = "kensuke_suzuki@ap.eng.osaka-u.ac.jp" }
 ]
 requires-python = ">=3.11"
 dependencies = [
     "pandas>=2.3.3",
+    "plotly>=6.8.0",
     "pydantic>=2.11.7",
     "pymongo>=4.15.5",
     "python-abc>=0.2.0",
@@ -21,6 +23,7 @@ parsexml = [
     "xmltodict>=0.14.2",
 ]
 GSAS-II = [
+    "GSAS-II @ git+https://github.com/AdvancedPhotonSource/GSAS-II.git@main",
     "gitpython>=3.1.45",
     "numpy<2.0 ; python_version <= '3.11'",
     "numpy>=2.0 ; python_version > '3.11'",
@@ -40,24 +43,8 @@ dev = [
 
 # Building
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build]
-sources = ['src']
-include = [
-    "src/**",
-    "README.md",
-    "LICENSE",
-]
-exclude = [
-  "tests/**",
-  "uv.lock",
-  ".python-version",
-  "*.pyc",
-  "__pycache__/**",
-  "CHANGELOG.md",
-]
+requires = ["uv_build>=0.12.5,<0.13"]
+build-backend = "uv_build"
 
 # Semantic release
 [tool.semantic_release]

@@ -11,6 +11,7 @@ from .params.post_study.server import PostStudyServerParams
 from .models.user import UserResponse as User
 from .models.study import Study
 from .models.trial import Trial, Refine
+from. models.task import TaskAggregation
 from .conf import VERIFY_CERT
 from .util import api_url, require_token, validate_id
 from .parsers import selector
@@ -483,11 +484,12 @@ class BBORClient:
 
     ### Tasks ###
     @require_token
-    def ask_task_queue_status(
+    def ask_task_status(
         self,
         study_id: Optional[str] = None,
+        return_dict: bool = False,
         return_response: bool = False,
-    ) -> Union[dict, None, Response]:
+    ) -> Union[TaskAggregation, Response, None]:
         if study_id is not None:
             param = {'study_id': study_id}
         else:
@@ -499,13 +501,18 @@ class BBORClient:
             authorization = True,
         )
         if response.status_code==200:
-            return response.json()
+            res_dict = response.json()
+            if return_dict:
+                return res_dict
+            else:
+                return TaskAggregation.model_validate(res_dict)
         else:
             print('Request failed')
             print(f'{response.status_code}: {response.content.decode()}')
             if return_response:
                 return response
-            return None
+            else:
+                return None
 
     @require_token
     def post_finishing_task(

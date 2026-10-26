@@ -681,6 +681,8 @@ class Refine(RefineBasemodel):
     group: Link
     start_at: datetime
     time_to_complete: timedelta
+    status: Literal['SUCCESS', 'FAILED', 'TIMEOUT']|None = None # Added since v2.3.2
+    exception: str|None = None # Added since v2.3.2
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
