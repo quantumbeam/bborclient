@@ -22,12 +22,10 @@ class BBORClient:
             self,
             username: Optional[str] = None,
             password: Optional[str] = None,
-            server: Literal['mdx', 'local', 'docker', 'dev'] = 'mdx',
-            _dp = None,
+            server: Union[Literal['mdx', 'local', 'docker'], str] = 'mdx',
     ):
         # Initialization
         self.server = server
-        self._dp = _dp
         self.history: list = []
         self.prmlist = []
         self.ciflist = []
@@ -56,7 +54,7 @@ class BBORClient:
     ) -> Response:
         if not endpoint.startswith('/'):
             endpoint = '/' + endpoint
-        url = api_url(self.server, self._dp) + endpoint
+        url = api_url(self.server) + endpoint
         if authorization:
             if self.token is None:
                 raise ValueError('Token is empty')
