@@ -1,6 +1,6 @@
 [project]
 name = "bbor_client"
-version = "1.0.0"
+version = "1.1.0"
 description = "A python client library for the BBO-Rietveld API server"
 readme = "README.md"
 license = "MIT"
