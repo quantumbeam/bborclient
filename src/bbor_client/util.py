@@ -22,17 +22,17 @@ def get_file_size_from_binaryio(bytes: BinaryIO) -> int:
     return size
 
 
-def api_url(server:str, dp) -> str:
+def api_url(server:str) -> str:
     if server=='mdx':
         return API_URL_MDX
     elif server=='local':
         return API_URL_LOCAL
     elif server=='docker':
         return API_URL_DOCKER
-    elif server=='dev':
-        return API_URL_MDX.replace('/api', f':{dp}/api')
+    elif server.startswith(('http://', 'https://')):
+        return server.rstrip('/')
     else:
-        raise ValueError('The argument server should be either "mdx", "local", or "docker".')
+        raise ValueError('The argument server should be "mdx", "local", "docker", or a URL starting with http:// or https://.')
 
 
 def require_token(func):

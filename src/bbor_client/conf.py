@@ -16,7 +16,7 @@ PRM_SUFFIXES = ('.prm', '.instprm')
 CIF_SUFFIXES = ('.cif', )
 
 # Server
-SERVER_ADDRESS = 'api.bborietveld.quantumbeam.org'
+SERVER_ADDRESS = 'api-bborietveld.quantumbeam.org'
 API_URL_MDX = f'https://{SERVER_ADDRESS}'
 API_URL_LOCAL = 'http://localhost:8000'
 API_URL_DOCKER = 'http://bborapi:8000'
