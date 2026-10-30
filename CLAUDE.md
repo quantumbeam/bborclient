@@ -16,7 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Known gaps — check before relying on these
 
-- No `tests/` directory exists anywhere in the repo, even though both CI workflows below invoke `pytest tests/unit tests/integrate tests/e2e` — that mismatch is presumably *why* they're disabled, not an accident.
+- Tests exist only in `tests/unit/`: the validation rules of `PostStudyServerParams` (`test_post_study_server_params.py`; run with `uv run pytest tests/unit`). The rules that check the server's file and sequence lists aren't tested yet: those lists are class variables filled at runtime, and how they're filled is under review (BBORview's `docs/validation-and-errors.md`). Both CI workflows below invoke `pytest tests/unit tests/integrate tests/e2e`; `tests/integrate` and `tests/e2e` don't exist.
+- Posting a study with a GPX file isn't implemented end to end: `_post_study_task` never puts the GPX file's contents into `PostStudyServerParams`, and `gpx_filecontent`'s type (`typing.BinaryIO`) rejects every real file object under pydantic's `arbitrary_types_allowed`. Only the measurement-file path works.
 
 ## CI / release
 

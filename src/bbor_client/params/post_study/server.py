@@ -68,7 +68,7 @@ class GPXFile(BaseModel):
         file_present = self.gpx_filecontent is not None
         filename_present = self.gpx_filename is not None
         if file_present + filename_present == 1:
-            raise KeyError(
+            raise ValueError(
                 'Both gpx_file and gpx_filename should be set.'
             )
         return self
@@ -93,7 +93,7 @@ class MeasurementFile(BaseModel):
         file_present = self.measurement_filecontent is not None
         filename_present = self.measurement_filename is not None
         if file_present + filename_present == 1:
-            raise KeyError(
+            raise ValueError(
                 'Both measurement_file and measurement_filename should be set.'
             )
         return self
@@ -142,14 +142,14 @@ class InputFiles(
         cif_present = self.cif_filenames is not None
         if mfile_present:
             if not prm_present:
-                raise KeyError('prm_file is required when measurement_file is specified.')
+                raise ValueError('prm_file is required when measurement_file is specified.')
             if not cif_present:
-                raise KeyError('cif_files is required when measurement_file is specified.')
+                raise ValueError('cif_files is required when measurement_file is specified.')
         else: #gpx_file specified
             if prm_present:
-                raise KeyError('Exclusive parameters set. prm_file not required when gpx_file is specified')
+                raise ValueError('Exclusive parameters set. prm_file not required when gpx_file is specified')
             if cif_present:
-                raise KeyError('Exclusive parameters set. cif_files not required when gpx_file is specified')
+                raise ValueError('Exclusive parameters set. cif_files not required when gpx_file is specified')
         return self
 
 
